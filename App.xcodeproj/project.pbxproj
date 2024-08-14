@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F8EB56AB2C6C4AE0005BC760 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EB56AA2C6C4AE0005BC760 /* Home.swift */; };
+		F8EB56AD2C6C4E02005BC760 /* CustomCornor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */; };
 		F8FF794F2C533DFA0007101A /* AppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF794E2C533DFA0007101A /* AppApp.swift */; };
 		F8FF79512C533DFA0007101A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF79502C533DFA0007101A /* ContentView.swift */; };
 		F8FF79532C533DFA0007101A /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF79522C533DFA0007101A /* Item.swift */; };
@@ -35,6 +37,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F8EB56AA2C6C4AE0005BC760 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
+		F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCornor.swift; sourceTree = "<group>"; };
 		F8FF794B2C533DFA0007101A /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8FF794E2C533DFA0007101A /* AppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppApp.swift; sourceTree = "<group>"; };
 		F8FF79502C533DFA0007101A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -74,6 +78,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F8EB56A92C6C4AC8005BC760 /* AppStore */ = {
+			isa = PBXGroup;
+			children = (
+				F8EB56AA2C6C4AE0005BC760 /* Home.swift */,
+				F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */,
+			);
+			path = AppStore;
+			sourceTree = "<group>";
+		};
 		F8FF79422C533DFA0007101A = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +110,7 @@
 		F8FF794D2C533DFA0007101A /* App */ = {
 			isa = PBXGroup;
 			children = (
+				F8EB56A92C6C4AC8005BC760 /* AppStore */,
 				F8FF794E2C533DFA0007101A /* AppApp.swift */,
 				F8FF79502C533DFA0007101A /* ContentView.swift */,
 				F8FF79522C533DFA0007101A /* Item.swift */,
@@ -264,6 +278,8 @@
 			files = (
 				F8FF79512C533DFA0007101A /* ContentView.swift in Sources */,
 				F8FF79532C533DFA0007101A /* Item.swift in Sources */,
+				F8EB56AB2C6C4AE0005BC760 /* Home.swift in Sources */,
+				F8EB56AD2C6C4E02005BC760 /* CustomCornor.swift in Sources */,
 				F8FF794F2C533DFA0007101A /* AppApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -436,7 +452,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -444,10 +460,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.renjun.App;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
@@ -473,7 +490,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -481,10 +498,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.renjun.App;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
