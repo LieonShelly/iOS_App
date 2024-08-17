@@ -53,7 +53,7 @@ struct OtherContents: View {
         .padding(.top, 15)
     }
 }
-
+@available(iOS 18.0, *)
 #Preview {
     AlbumContentView()
 }

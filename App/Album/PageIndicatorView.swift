@@ -73,7 +73,7 @@ struct PageIndicatorView: View {
         .foregroundColor(.primary)
     }
 }
-
+@available(iOS 18.0, *)
 #Preview {
     AlbumContentView()
 }
