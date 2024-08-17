@@ -25,7 +25,7 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Home()
+            AlbumContentView()
         }
         .modelContainer(sharedModelContainer)
     }
