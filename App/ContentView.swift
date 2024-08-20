@@ -11,36 +11,39 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
-
+    @AppStorage("isFirstTime") private var isFirstTime: Bool = true
+    @State private var activeTab: Tab = .recents
+   
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        TabView(selection: $activeTab) {
+            Recents()
+                .tag(Tab.recents)
+                .tabItem {
+                    Tab.recents.tabContent
                 }
-                .onDelete(perform: deleteItems)
-            }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+            
+            Search()
+                .tag(Tab.search)
+                .tabItem {
+                    Tab.search.tabContent
                 }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+            
+            Graphs()
+                .tag(Tab.charts)
+                .tabItem {
+                    Tab.charts.tabContent
                 }
-            }
-        } detail: {
-            Text("Select an item")
+            
+            Settings()
+                .tag(Tab.settings)
+                .tabItem {
+                    Tab.settings.tabContent
+                }
+        }
+        .tint(appTint)
+        .sheet(isPresented: $isFirstTime) {
+            IntroScreen()
+                .interactiveDismissDisabled()
         }
     }
 

@@ -25,11 +25,7 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if #available(iOS 18.0, *) {
-                AlbumContentView()
-            } else {
-                ContentView()
-            }
+            ContentView()
         }
         .modelContainer(sharedModelContainer)
     }
