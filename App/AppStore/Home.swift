@@ -274,7 +274,7 @@ struct ScaledButtonStyle: ButtonStyle {
 }
 
 extension View {
-    func safeArea() -> UIEdgeInsets {
+    nonisolated func safeArea() -> UIEdgeInsets {
         guard let screen = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
             return .zero
         }

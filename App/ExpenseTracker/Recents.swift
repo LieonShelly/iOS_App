@@ -11,6 +11,9 @@ struct Recents: View {
     @AppStorage("userName") private var userName: String = ""
     @State private var startDate: Date = .now.startOfMonth
     @State private var endDate: Date = .now.endOfMonth
+    @State private var selectedCategory: Category = .expense
+    @State private var showFilterView: Bool = false
+    @Namespace private var animation
     
     var body: some View {
         GeometryReader {
@@ -20,7 +23,7 @@ struct Recents: View {
                     LazyVStack(spacing: 10, pinnedViews: [.sectionHeaders]) {
                         Section {
                             Button {
-                                
+                                showFilterView = true
                             } label: {
                                 Text("\(startDate.format("dd - MM yy")) to \(endDate.format("dd - MM yy"))")
                                     .font(.caption2)
@@ -29,7 +32,12 @@ struct Recents: View {
                             .hSpacing(.leading)
                             
                             CardView(income: 100, expense: 200)
-
+                            segmentControl
+                                .padding(.bottom, 10)
+                            ForEach(sampleTransactions.filter { $0.category == selectedCategory.rawValue}) { transaction in
+                                // TODO: To add swipe view
+                                TransactionCardView(transaction: transaction)
+                            }
                         } header: {
                             headerView(size)
                         }
@@ -37,7 +45,23 @@ struct Recents: View {
                     .padding(15)
                 }
                 .background(.gray.opacity(0.15))
+                .blur(radius: showFilterView ? 8 : 0)
+                .disabled(showFilterView)
             }
+            .overlay {
+                if showFilterView {
+                    DateFilterView(start: startDate, end: endDate, onSubmit: { start, end in
+                        startDate = startDate
+                        endDate = end
+                        showFilterView = false
+                    }, onClose: {
+                        showFilterView = false
+                    })
+                        .transition(.move(edge: .leading))
+                }
+             
+            }
+            .animation(.snappy, value: showFilterView)
         }
     }
     
@@ -59,7 +83,7 @@ struct Recents: View {
             
             Spacer()
             NavigationLink {
-                
+                NewExpenseView()
             } label: {
                 Image(systemName: "plus")
                     .font(.title3)
@@ -84,12 +108,13 @@ struct Recents: View {
             .padding(.top, -(safeArea().top + 15))
         }
     }
-    
+    nonisolated
     func headerBGOpacity(_ proxy: GeometryProxy) -> CGFloat {
         let minY = proxy.frame(in: .scrollView).minY + safeArea().top
         return minY > 0 ? 0 : (-minY / 15)
     }
     
+    nonisolated
     func headerScale(_ size: CGSize, proxy: GeometryProxy) -> CGFloat {
         let minY = proxy.frame(in: .scrollView).minY
         let screenHeight = size.height
@@ -97,6 +122,31 @@ struct Recents: View {
         let progress = minY / screenHeight
         let scale = min(max(progress, 0), 1) * 0.6
         return 1 + scale
+    }
+    
+    var segmentControl: some View {
+        HStack(spacing: .zero) {
+            ForEach(Category.allCases, id: \.rawValue) { categor in
+                Text(categor.rawValue)
+                    .hSpacing()
+                    .padding(.vertical, 10)
+                    .background {
+                        if categor == selectedCategory {
+                            Capsule()
+                                .fill(.background)
+                                .matchedGeometryEffect(id: "ACTIVEDTAB", in: animation)
+                        }
+                    }
+                    .contentShape(.capsule)
+                    .onTapGesture {
+                        withAnimation(.snappy) {
+                            selectedCategory = categor
+                        }
+                    }
+            }
+        }
+        .background(.gray.opacity(0.15), in: .capsule)
+        .padding(.top, 5)
     }
 }
 

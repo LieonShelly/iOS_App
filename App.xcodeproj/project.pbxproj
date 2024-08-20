@@ -18,6 +18,9 @@
 		F83BB5D42C724FC6005B4EC9 /* Graphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5D32C724FC6005B4EC9 /* Graphs.swift */; };
 		F83BB5D62C724FE0005B4EC9 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5D52C724FE0005B4EC9 /* Settings.swift */; };
 		F83BB5D82C725225005B4EC9 /* View+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5D72C725225005B4EC9 /* View+Extension.swift */; };
+		F85FD34F2C74E19100E38388 /* TransactionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85FD34E2C74E19100E38388 /* TransactionCardView.swift */; };
+		F85FD3512C74E77100E38388 /* DateFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85FD3502C74E77100E38388 /* DateFilterView.swift */; };
+		F85FD3532C74EE6300E38388 /* NewExpenseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85FD3522C74EE6300E38388 /* NewExpenseView.swift */; };
 		F8B6F4862C6E4ED50005BBDE /* AlbumHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B6F4852C6E4ED50005BBDE /* AlbumHome.swift */; };
 		F8B6F4882C6E4F740005BBDE /* PhotoScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B6F4872C6E4F740005BBDE /* PhotoScrollView.swift */; };
 		F8B6F48A2C6E57AF0005BBDE /* OtherContents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B6F4892C6E57AF0005BBDE /* OtherContents.swift */; };
@@ -66,6 +69,9 @@
 		F83BB5D32C724FC6005B4EC9 /* Graphs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Graphs.swift; sourceTree = "<group>"; };
 		F83BB5D52C724FE0005B4EC9 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		F83BB5D72C725225005B4EC9 /* View+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extension.swift"; sourceTree = "<group>"; };
+		F85FD34E2C74E19100E38388 /* TransactionCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionCardView.swift; sourceTree = "<group>"; };
+		F85FD3502C74E77100E38388 /* DateFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFilterView.swift; sourceTree = "<group>"; };
+		F85FD3522C74EE6300E38388 /* NewExpenseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewExpenseView.swift; sourceTree = "<group>"; };
 		F8B6F4852C6E4ED50005BBDE /* AlbumHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumHome.swift; sourceTree = "<group>"; };
 		F8B6F4872C6E4F740005BBDE /* PhotoScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoScrollView.swift; sourceTree = "<group>"; };
 		F8B6F4892C6E57AF0005BBDE /* OtherContents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherContents.swift; sourceTree = "<group>"; };
@@ -128,6 +134,9 @@
 				F83BB5D72C725225005B4EC9 /* View+Extension.swift */,
 				F82DC7B92C7417FE00E73F6B /* Date+Extesnsion.swift */,
 				F82DC7BB2C741CB800E73F6B /* CardView.swift */,
+				F85FD34E2C74E19100E38388 /* TransactionCardView.swift */,
+				F85FD3502C74E77100E38388 /* DateFilterView.swift */,
+				F85FD3522C74EE6300E38388 /* NewExpenseView.swift */,
 			);
 			path = ExpenseTracker;
 			sourceTree = "<group>";
@@ -373,13 +382,16 @@
 				F8B6F48D2C6E59CC0005BBDE /* SharedData.swift in Sources */,
 				F8FF79512C533DFA0007101A /* ContentView.swift in Sources */,
 				F83BB5CE2C724D78005B4EC9 /* Transaction.swift in Sources */,
+				F85FD3512C74E77100E38388 /* DateFilterView.swift in Sources */,
 				F8FF79532C533DFA0007101A /* Item.swift in Sources */,
 				F8B6F4882C6E4F740005BBDE /* PhotoScrollView.swift in Sources */,
+				F85FD34F2C74E19100E38388 /* TransactionCardView.swift in Sources */,
 				F8EB56AB2C6C4AE0005BC760 /* Home.swift in Sources */,
 				F8B6F4862C6E4ED50005BBDE /* AlbumHome.swift in Sources */,
 				F8EB56AD2C6C4E02005BC760 /* CustomCornor.swift in Sources */,
 				F83BB5CA2C724784005B4EC9 /* Constant.swift in Sources */,
 				F82DC7BA2C7417FE00E73F6B /* Date+Extesnsion.swift in Sources */,
+				F85FD3532C74EE6300E38388 /* NewExpenseView.swift in Sources */,
 				F8B6F48A2C6E57AF0005BBDE /* OtherContents.swift in Sources */,
 				F8F8BF762C70BEB200F942F5 /* MusicHome.swift in Sources */,
 				F83BB5D42C724FC6005B4EC9 /* Graphs.swift in Sources */,
