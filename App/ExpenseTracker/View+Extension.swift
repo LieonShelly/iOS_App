@@ -23,6 +23,10 @@ extension View {
 //        return .zero
 //    }
     
+    var currencySymbol: String {
+        let locale = Locale.current
+        return locale.currencySymbol ?? ""
+    }
 }
 
 extension Double {

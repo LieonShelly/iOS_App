@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 enum Category: String, CaseIterable {
     case income = "Income"
@@ -27,13 +28,13 @@ var tints: [TintColor] = [
     .init(color: "Orange", value: .orange),
 ]
 
-struct Transaction: Identifiable {
-    let id: UUID = .init()
-    let title: String
-    let remarks: String
-    let amount: Double
-    let dateAdded: Date
-    let category: String
+@Model
+class Transaction: Identifiable {
+    var title: String
+    var remarks: String
+    var amount: Double
+    var dateAdded: Date
+    var category: String
     var tintColor: String
     
     
@@ -50,11 +51,3 @@ struct Transaction: Identifiable {
         return tints.first(where: { $0.color == tintColor })?.value ?? appTint
     }
 }
-
-
-var sampleTransactions: [Transaction] = [
-    .init(title: "Magic Keyboard", remarks: "Apple Product", amount: 129, dateAdded: .now, category: .expense, tintColor: tints.randomElement()!),
-    .init(title: "Apple Music", remarks: "Subscription", amount: 10.99, dateAdded: .now, category: .expense, tintColor: tints.randomElement()!),
-    .init(title: "iCloud", remarks: "Subscription", amount: 5.55, dateAdded: .now, category: .expense, tintColor: tints.randomElement()!),
-    .init(title: "Payment", remarks: "Payment Recieved", amount: 2232, dateAdded: .now, category: .income, tintColor: tints.randomElement()!),
-    ]

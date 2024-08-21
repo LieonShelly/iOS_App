@@ -8,12 +8,15 @@
 import SwiftUI
 
 struct NewExpenseView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    var editTransactoion: Transaction?
     @State private var title: String = ""
     @State private var remarks: String = ""
     @State private var amount: Double = .zero
     @State private var dateAdded: Date = .now
     @State private var category: Category = .expense
-    var tint: TintColor = tints.randomElement()!
+    @State var tint: TintColor = tints.randomElement()!
     
     var body: some View {
         ScrollView {
@@ -42,12 +45,18 @@ struct NewExpenseView: View {
                         .hSpacing(.leading)
                     
                     HStack(spacing: 15) {
-                        TextField("0.0", value: $amount, formatter: numberFormatter)
+                        HStack(spacing: 4) {
+                            Text(currencySymbol)
+                                .font(.callout.bold())
+                            TextField("0.0", value: $amount, formatter: numberFormatter)
+                                .keyboardType(.decimalPad)
+                        }
+                      
                             .padding(.horizontal, 15)
                             .padding(.vertical, 12)
                             .background(.background, in: .rect(cornerRadius: 10))
                             .frame(maxWidth: 130)
-                            .keyboardType(.decimalPad)
+                           
                         
                         categoryCheckBox()
                     }
@@ -73,7 +82,19 @@ struct NewExpenseView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") {
-                    
+                    save()
+                }
+            }
+        }
+        .onAppear {
+            if let editTransactoion {
+                title = editTransactoion.title
+                remarks = editTransactoion.remarks
+                amount = editTransactoion.amount
+                dateAdded = editTransactoion.dateAdded
+                category = Category(rawValue: editTransactoion.category) ?? .expense
+                if let tint = tints.first(where: { $0.color == editTransactoion.tintColor }) {
+                    self.tint = tint
                 }
             }
         }
@@ -123,7 +144,22 @@ struct NewExpenseView: View {
         }
     }
     
-    
+    func save() {
+        if editTransactoion != nil {
+            editTransactoion?.title = title
+            editTransactoion?.remarks = remarks
+            editTransactoion?.amount = amount
+            editTransactoion?.category = category.rawValue
+            editTransactoion?.tintColor = tint.color
+            editTransactoion?.dateAdded = dateAdded
+            
+        } else {
+            let transaction = Transaction(title: title, remarks: remarks, amount: amount, dateAdded: dateAdded, category: category, tintColor: tint)
+            context.insert(transaction)
+        }
+     
+        dismiss()
+    }
     var numberFormatter: NumberFormatter {
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = .decimal

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct Recents: View {
     @AppStorage("userName") private var userName: String = ""
@@ -14,6 +15,9 @@ struct Recents: View {
     @State private var selectedCategory: Category = .expense
     @State private var showFilterView: Bool = false
     @Namespace private var animation
+    
+    @Query(sort: [SortDescriptor(\Transaction.dateAdded, order: .reverse)], animation: .snappy)
+    private var transactions: [Transaction]
     
     var body: some View {
         GeometryReader {
@@ -34,9 +38,13 @@ struct Recents: View {
                             CardView(income: 100, expense: 200)
                             segmentControl
                                 .padding(.bottom, 10)
-                            ForEach(sampleTransactions.filter { $0.category == selectedCategory.rawValue}) { transaction in
-                                // TODO: To add swipe view
-                                TransactionCardView(transaction: transaction)
+                            ForEach(transactions) { transaction in
+                                NavigationLink {
+                                    NewExpenseView(editTransactoion: transaction)
+                                } label: {
+                                    TransactionCardView(transaction: transaction)
+                                }
+                                .buttonStyle(.plain)
                             }
                         } header: {
                             headerView(size)

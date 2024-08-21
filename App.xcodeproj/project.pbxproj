@@ -27,6 +27,8 @@
 		F8B6F48D2C6E59CC0005BBDE /* SharedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B6F48C2C6E59CC0005BBDE /* SharedData.swift */; };
 		F8B6F48F2C6EDBA20005BBDE /* PageIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B6F48E2C6EDBA20005BBDE /* PageIndicatorView.swift */; };
 		F8B6F4922C6EDF2F0005BBDE /* CustomerGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B6F4912C6EDF2F0005BBDE /* CustomerGesture.swift */; };
+		F8C54AE72C76372800E6AA02 /* SwiftUICore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8C54AE52C76372800E6AA02 /* SwiftUICore.framework */; };
+		F8C54AE82C76372800E6AA02 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8C54AE62C76372800E6AA02 /* SwiftUI.framework */; };
 		F8EB56AB2C6C4AE0005BC760 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EB56AA2C6C4AE0005BC760 /* Home.swift */; };
 		F8EB56AD2C6C4E02005BC760 /* CustomCornor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */; };
 		F8F8BF762C70BEB200F942F5 /* MusicHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F8BF752C70BEB200F942F5 /* MusicHome.swift */; };
@@ -78,6 +80,8 @@
 		F8B6F48C2C6E59CC0005BBDE /* SharedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedData.swift; sourceTree = "<group>"; };
 		F8B6F48E2C6EDBA20005BBDE /* PageIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageIndicatorView.swift; sourceTree = "<group>"; };
 		F8B6F4912C6EDF2F0005BBDE /* CustomerGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerGesture.swift; sourceTree = "<group>"; };
+		F8C54AE52C76372800E6AA02 /* SwiftUICore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUICore.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/SwiftUICore.framework; sourceTree = DEVELOPER_DIR; };
+		F8C54AE62C76372800E6AA02 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/SwiftUI.framework; sourceTree = DEVELOPER_DIR; };
 		F8EB56AA2C6C4AE0005BC760 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCornor.swift; sourceTree = "<group>"; };
 		F8F8BF752C70BEB200F942F5 /* MusicHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicHome.swift; sourceTree = "<group>"; };
@@ -100,6 +104,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F8C54AE72C76372800E6AA02 /* SwiftUICore.framework in Frameworks */,
+				F8C54AE82C76372800E6AA02 /* SwiftUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +176,15 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
+		F8C54AE42C76372800E6AA02 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F8C54AE62C76372800E6AA02 /* SwiftUI.framework */,
+				F8C54AE52C76372800E6AA02 /* SwiftUICore.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		F8EB56A92C6C4AC8005BC760 /* AppStore */ = {
 			isa = PBXGroup;
 			children = (
@@ -194,6 +209,7 @@
 				F8FF79612C533DFC0007101A /* AppTests */,
 				F8FF796B2C533DFC0007101A /* AppUITests */,
 				F8FF794C2C533DFA0007101A /* Products */,
+				F8C54AE42C76372800E6AA02 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
