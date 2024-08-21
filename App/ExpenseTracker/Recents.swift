@@ -38,7 +38,7 @@ struct Recents: View {
                             CardView(income: 100, expense: 200)
                             segmentControl
                                 .padding(.bottom, 10)
-                            ForEach(transactions) { transaction in
+                            ForEach(transactions.filter { $0.category == selectedCategory.rawValue }) { transaction in
                                 NavigationLink {
                                     NewExpenseView(editTransactoion: transaction)
                                 } label: {

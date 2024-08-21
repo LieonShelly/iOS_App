@@ -27,6 +27,12 @@ extension View {
         let locale = Locale.current
         return locale.currencySymbol ?? ""
     }
+    
+    nonisolated  func total(_ transaction: [Transaction], category: Category) -> Double {
+        transaction.filter({ $0.category == category.rawValue })
+            .map { $0.amount}
+            .reduce(0, { $0 + $1 })
+    }
 }
 
 extension Double {
