@@ -8,12 +8,21 @@
 import SwiftUI
 import SwiftData
 
+class ContentViewModel: ObservableObject {
+    
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
     @AppStorage("isFirstTime") private var isFirstTime: Bool = true
     @State private var activeTab: Tab = .recents
-   
+    @StateObject var viewModel: ContentViewModel
+    
+    init() {
+        _viewModel = StateObject(wrappedValue: ContentViewModel())
+    }
+
     var body: some View {
         TabView(selection: $activeTab) {
             Recents()
@@ -40,6 +49,7 @@ struct ContentView: View {
                     Tab.settings.tabContent
                 }
         }
+        .environmentObject(viewModel)
         .tint(appTint)
         .sheet(isPresented: $isFirstTime) {
             IntroScreen()

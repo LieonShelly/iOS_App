@@ -157,7 +157,7 @@ struct NewExpenseView: View {
             let transaction = Transaction(title: title, remarks: remarks, amount: amount, dateAdded: dateAdded, category: category, tintColor: tint)
             context.insert(transaction)
         }
-     
+        try? context.save()
         dismiss()
     }
     var numberFormatter: NumberFormatter {

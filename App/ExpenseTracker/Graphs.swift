@@ -22,6 +22,21 @@ struct Graphs: View {
                         .padding(.top, 10)
                         .frame(height: 200)
                         .background(.background, in: .rect(cornerRadius: 10))
+                    
+                    ForEach(chartGroups) { group in
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(group.date.format("MMM yy"))
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                                .hSpacing(.leading)
+                            
+                            NavigationLink {
+                                ListOfExpanse(moth: group.date)
+                            } label: {
+                                CardView(income: group.totalIncome, expense: group.totalExpense)
+                            }
+                        }
+                    }
                 }
                 .padding(15)
             }
@@ -49,6 +64,16 @@ struct Graphs: View {
         .chartScrollableAxes(.horizontal)
         .chartXVisibleDomain(length: 4)
         .chartLegend(position: .bottom, alignment: .trailing)
+        .chartYAxis(content: {
+            AxisMarks(position: .leading) { value in
+                let doubleValue = value.as(Double.self) ?? 0
+                AxisGridLine()
+                AxisTick()
+                AxisValueLabel {
+                    Text("\(axixLabel(doubleValue))")
+                }
+            }
+        })
         .chartForegroundStyleScale(range: [Color.green.gradient, Color.red.gradient])
     }
     
@@ -83,5 +108,110 @@ struct Graphs: View {
             }
             
         }
+    }
+    
+    func axixLabel(_ value: Double) -> String {
+        let intValue = Int(value)
+        let kvalue = Int(value) / 1000
+        return intValue < 1000 ? "\(intValue)" : "\(kvalue)K"
+    }
+}
+
+struct ListOfExpanse: View {
+    let moth: Date
+    @State private var incomeList: [Transaction] = []
+    @State private var expenseList: [Transaction] = []
+    @Environment(\.modelContext) private var modelContext;
+    
+    init(moth: Date) {
+        self.moth = moth
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: 15) {
+                    Section {
+                        ForEach(incomeList, id: \.id) { transaction in
+                            NavigationLink {
+                                NewExpenseView(editTransactoion: transaction)
+                            } label: {
+                                TransactionCardView(transaction: transaction)
+                            }
+                        }
+                        
+                    } header: {
+                        Text("Income")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                            .hSpacing(.leading)
+                    }
+                    
+                    Section {
+                        ForEach(expenseList, id: \.id) { transaction in
+                            NavigationLink {
+                                NewExpenseView(editTransactoion: transaction)
+                            } label: {
+                                TransactionCardView(transaction: transaction)
+                            }
+                        }
+                        
+                    } header: {
+                        Text("Expense")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                            .hSpacing(.leading)
+                    }
+                }
+                .padding(15)
+            }
+        }
+        .buttonStyle(.plain)
+        .background(.gray.opacity(0.15))
+        .navigationTitle(moth.format("MM yy"))
+        .navigationDestination(for: Transaction.self) { transacton in
+            TransactionCardView(transaction: transacton)
+        }
+        .onAppear {
+            incomeList = (try? modelContext.fetch(Transaction.fetchDescriptor(startDate: moth.startOfMonth, endDate: moth.endOfMonth, category: .income))) ?? []
+            expenseList = (try? modelContext.fetch(Transaction.fetchDescriptor(startDate: moth.startOfMonth, endDate: moth.endOfMonth, category: .expense))) ?? []
+        }
+    }
+    
+}
+
+
+struct DataService {
+    private var modelContext: ModelContext
+    
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+    }
+    
+    func fetchTransactions(
+        startDate: Date,
+        endDate: Date,
+        category: Category
+    ) -> [Transaction] {
+        let category = category.rawValue
+        let predicate1 = #Predicate<Transaction> { transtion in
+            return transtion.dateAdded >= startDate && transtion.dateAdded <= endDate &&
+            transtion.category == category
+        }
+       let descriptor1 = FetchDescriptor<Transaction>(predicate: predicate1, sortBy: [.init(\.dateAdded, order: .forward)])
+        return (try? modelContext.fetch(descriptor1)) ?? []
+    }
+}
+
+extension Transaction {
+    
+    static func fetchDescriptor(startDate: Date, endDate: Date, category: Category) -> FetchDescriptor<Transaction> {
+        let category = category.rawValue
+        let predicate1 = #Predicate<Transaction> { transtion in
+            return transtion.dateAdded >= startDate && transtion.dateAdded <= endDate &&
+            transtion.category == category
+        }
+       let descriptor1 = FetchDescriptor<Transaction>(predicate: predicate1, sortBy: [.init(\.dateAdded, order: .forward)])
+        return descriptor1
     }
 }

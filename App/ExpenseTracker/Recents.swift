@@ -38,7 +38,7 @@ struct Recents: View {
                             CardView(income: 100, expense: 200)
                             segmentControl
                                 .padding(.bottom, 10)
-                            ForEach(transactions.filter { $0.category == selectedCategory.rawValue }) { transaction in
+                            ForEach(transactions.filter { $0.category == selectedCategory.rawValue && $0.dateAdded >= startDate && $0.dateAdded <= endDate }) { transaction in
                                 NavigationLink {
                                     NewExpenseView(editTransactoion: transaction)
                                 } label: {
@@ -59,7 +59,7 @@ struct Recents: View {
             .overlay {
                 if showFilterView {
                     DateFilterView(start: startDate, end: endDate, onSubmit: { start, end in
-                        startDate = startDate
+                        startDate = start
                         endDate = end
                         showFilterView = false
                     }, onClose: {

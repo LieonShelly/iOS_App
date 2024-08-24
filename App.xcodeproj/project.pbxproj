@@ -18,6 +18,15 @@
 		F83BB5D42C724FC6005B4EC9 /* Graphs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5D32C724FC6005B4EC9 /* Graphs.swift */; };
 		F83BB5D62C724FE0005B4EC9 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5D52C724FE0005B4EC9 /* Settings.swift */; };
 		F83BB5D82C725225005B4EC9 /* View+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5D72C725225005B4EC9 /* View+Extension.swift */; };
+		F84541EC2C778FAA0093290D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F84541EB2C778FAA0093290D /* WidgetKit.framework */; };
+		F84541ED2C778FAA0093290D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8C54AE62C76372800E6AA02 /* SwiftUI.framework */; };
+		F84541F02C778FAA0093290D /* StartCardViewLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84541EF2C778FAA0093290D /* StartCardViewLiveActivity.swift */; };
+		F84541F22C778FAA0093290D /* StartCardViewBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84541F12C778FAA0093290D /* StartCardViewBundle.swift */; };
+		F84541F42C778FAA0093290D /* StartCardViewControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84541F32C778FAA0093290D /* StartCardViewControl.swift */; };
+		F84541F62C778FAA0093290D /* StartCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84541F52C778FAA0093290D /* StartCardView.swift */; };
+		F84541F82C778FAA0093290D /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84541F72C778FAA0093290D /* AppIntent.swift */; };
+		F84541FA2C778FAC0093290D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F84541F92C778FAC0093290D /* Assets.xcassets */; };
+		F84541FF2C778FAC0093290D /* StartCardViewExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F84541EA2C778FAA0093290D /* StartCardViewExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F85FD34F2C74E19100E38388 /* TransactionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85FD34E2C74E19100E38388 /* TransactionCardView.swift */; };
 		F85FD3512C74E77100E38388 /* DateFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85FD3502C74E77100E38388 /* DateFilterView.swift */; };
 		F85FD3532C74EE6300E38388 /* NewExpenseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85FD3522C74EE6300E38388 /* NewExpenseView.swift */; };
@@ -44,6 +53,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		F84541FC2C778FAC0093290D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F8FF79432C533DFA0007101A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F84541E92C778FAA0093290D;
+			remoteInfo = StartCardViewExtension;
+		};
 		F8FF795F2C533DFC0007101A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F8FF79432C533DFA0007101A /* Project object */;
@@ -60,6 +76,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		F84541FE2C778FAC0093290D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F84541FF2C778FAC0093290D /* StartCardViewExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		F82DC7B92C7417FE00E73F6B /* Date+Extesnsion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extesnsion.swift"; sourceTree = "<group>"; };
 		F82DC7BB2C741CB800E73F6B /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
@@ -72,6 +102,15 @@
 		F83BB5D32C724FC6005B4EC9 /* Graphs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Graphs.swift; sourceTree = "<group>"; };
 		F83BB5D52C724FE0005B4EC9 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		F83BB5D72C725225005B4EC9 /* View+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extension.swift"; sourceTree = "<group>"; };
+		F84541EA2C778FAA0093290D /* StartCardViewExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StartCardViewExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F84541EB2C778FAA0093290D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F84541EF2C778FAA0093290D /* StartCardViewLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCardViewLiveActivity.swift; sourceTree = "<group>"; };
+		F84541F12C778FAA0093290D /* StartCardViewBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCardViewBundle.swift; sourceTree = "<group>"; };
+		F84541F32C778FAA0093290D /* StartCardViewControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCardViewControl.swift; sourceTree = "<group>"; };
+		F84541F52C778FAA0093290D /* StartCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartCardView.swift; sourceTree = "<group>"; };
+		F84541F72C778FAA0093290D /* AppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntent.swift; sourceTree = "<group>"; };
+		F84541F92C778FAC0093290D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F84541FB2C778FAC0093290D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F85FD34E2C74E19100E38388 /* TransactionCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionCardView.swift; sourceTree = "<group>"; };
 		F85FD3502C74E77100E38388 /* DateFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFilterView.swift; sourceTree = "<group>"; };
 		F85FD3522C74EE6300E38388 /* NewExpenseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewExpenseView.swift; sourceTree = "<group>"; };
@@ -102,6 +141,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		F84541E72C778FAA0093290D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F84541ED2C778FAA0093290D /* SwiftUI.framework in Frameworks */,
+				F84541EC2C778FAA0093290D /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F8FF79482C533DFA0007101A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -150,6 +198,20 @@
 			path = ExpenseTracker;
 			sourceTree = "<group>";
 		};
+		F84541EE2C778FAA0093290D /* StartCardView */ = {
+			isa = PBXGroup;
+			children = (
+				F84541EF2C778FAA0093290D /* StartCardViewLiveActivity.swift */,
+				F84541F12C778FAA0093290D /* StartCardViewBundle.swift */,
+				F84541F32C778FAA0093290D /* StartCardViewControl.swift */,
+				F84541F52C778FAA0093290D /* StartCardView.swift */,
+				F84541F72C778FAA0093290D /* AppIntent.swift */,
+				F84541F92C778FAC0093290D /* Assets.xcassets */,
+				F84541FB2C778FAC0093290D /* Info.plist */,
+			);
+			path = StartCardView;
+			sourceTree = "<group>";
+		};
 		F8B6F4842C6E4EBD0005BBDE /* Album */ = {
 			isa = PBXGroup;
 			children = (
@@ -184,6 +246,7 @@
 			children = (
 				F8C54AE62C76372800E6AA02 /* SwiftUI.framework */,
 				F8C54AE52C76372800E6AA02 /* SwiftUICore.framework */,
+				F84541EB2C778FAA0093290D /* WidgetKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -211,6 +274,7 @@
 				F8FF794D2C533DFA0007101A /* App */,
 				F8FF79612C533DFC0007101A /* AppTests */,
 				F8FF796B2C533DFC0007101A /* AppUITests */,
+				F84541EE2C778FAA0093290D /* StartCardView */,
 				F8FF794C2C533DFA0007101A /* Products */,
 				F8C54AE42C76372800E6AA02 /* Frameworks */,
 			);
@@ -222,6 +286,7 @@
 				F8FF794B2C533DFA0007101A /* App.app */,
 				F8FF795E2C533DFC0007101A /* AppTests.xctest */,
 				F8FF79682C533DFC0007101A /* AppUITests.xctest */,
+				F84541EA2C778FAA0093290D /* StartCardViewExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -271,6 +336,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		F84541E92C778FAA0093290D /* StartCardViewExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F84542022C778FAC0093290D /* Build configuration list for PBXNativeTarget "StartCardViewExtension" */;
+			buildPhases = (
+				F84541E62C778FAA0093290D /* Sources */,
+				F84541E72C778FAA0093290D /* Frameworks */,
+				F84541E82C778FAA0093290D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StartCardViewExtension;
+			productName = StartCardViewExtension;
+			productReference = F84541EA2C778FAA0093290D /* StartCardViewExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		F8FF794A2C533DFA0007101A /* App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F8FF79722C533DFC0007101A /* Build configuration list for PBXNativeTarget "App" */;
@@ -278,10 +360,12 @@
 				F8FF79472C533DFA0007101A /* Sources */,
 				F8FF79482C533DFA0007101A /* Frameworks */,
 				F8FF79492C533DFA0007101A /* Resources */,
+				F84541FE2C778FAC0093290D /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F84541FD2C778FAC0093290D /* PBXTargetDependency */,
 			);
 			name = App;
 			productName = App;
@@ -334,6 +418,9 @@
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					F84541E92C778FAA0093290D = {
+						CreatedOnToolsVersion = 16.0;
+					};
 					F8FF794A2C533DFA0007101A = {
 						CreatedOnToolsVersion = 16.0;
 					};
@@ -363,11 +450,20 @@
 				F8FF794A2C533DFA0007101A /* App */,
 				F8FF795D2C533DFC0007101A /* AppTests */,
 				F8FF79672C533DFC0007101A /* AppUITests */,
+				F84541E92C778FAA0093290D /* StartCardViewExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		F84541E82C778FAA0093290D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F84541FA2C778FAC0093290D /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F8FF79492C533DFA0007101A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -394,6 +490,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		F84541E62C778FAA0093290D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F84541F02C778FAA0093290D /* StartCardViewLiveActivity.swift in Sources */,
+				F84541F62C778FAA0093290D /* StartCardView.swift in Sources */,
+				F84541F82C778FAA0093290D /* AppIntent.swift in Sources */,
+				F84541F42C778FAA0093290D /* StartCardViewControl.swift in Sources */,
+				F84541F22C778FAA0093290D /* StartCardViewBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F8FF79472C533DFA0007101A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -448,6 +556,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F84541FD2C778FAC0093290D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F84541E92C778FAA0093290D /* StartCardViewExtension */;
+			targetProxy = F84541FC2C778FAC0093290D /* PBXContainerItemProxy */;
+		};
 		F8FF79602C533DFC0007101A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F8FF794A2C533DFA0007101A /* App */;
@@ -461,6 +574,67 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		F84542002C778FAC0093290D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StartCardView/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StartCardView;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.renjun.App.StartCardView;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F84542012C778FAC0093290D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StartCardView/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StartCardView;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.renjun.App.StartCardView;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		F8FF79702C533DFC0007101A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -581,9 +755,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -603,6 +778,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.renjun.App;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
@@ -619,9 +795,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -641,6 +818,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.renjun.App;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
@@ -740,6 +918,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		F84542022C778FAC0093290D /* Build configuration list for PBXNativeTarget "StartCardViewExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F84542002C778FAC0093290D /* Debug */,
+				F84542012C778FAC0093290D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F8FF79462C533DFA0007101A /* Build configuration list for PBXProject "App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

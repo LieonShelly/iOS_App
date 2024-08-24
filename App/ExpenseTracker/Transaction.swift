@@ -36,7 +36,8 @@ class Transaction: Identifiable {
     var dateAdded: Date
     var category: String
     var tintColor: String
-    
+    @Transient
+    var id: String  = UUID().uuidString
     
     init(title: String, remarks: String, amount: Double, dateAdded: Date, category: Category, tintColor: TintColor) {
         self.title = title
