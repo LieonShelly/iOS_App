@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F8064F002C7ADCA40022E69B /* SwipeActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8064EFF2C7ADCA40022E69B /* SwipeActionView.swift */; };
 		F82DC7BA2C7417FE00E73F6B /* Date+Extesnsion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82DC7B92C7417FE00E73F6B /* Date+Extesnsion.swift */; };
 		F82DC7BC2C741CB800E73F6B /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82DC7BB2C741CB800E73F6B /* CardView.swift */; };
 		F83BB5C82C7245FE005B4EC9 /* IntroScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83BB5C72C7245FE005B4EC9 /* IntroScreen.swift */; };
@@ -91,6 +92,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F8064EFF2C7ADCA40022E69B /* SwipeActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeActionView.swift; sourceTree = "<group>"; };
 		F82DC7B92C7417FE00E73F6B /* Date+Extesnsion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extesnsion.swift"; sourceTree = "<group>"; };
 		F82DC7BB2C741CB800E73F6B /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		F83BB5C72C7245FE005B4EC9 /* IntroScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroScreen.swift; sourceTree = "<group>"; };
@@ -194,6 +196,7 @@
 				F85FD3502C74E77100E38388 /* DateFilterView.swift */,
 				F85FD3522C74EE6300E38388 /* NewExpenseView.swift */,
 				F8C54AE92C7641A600E6AA02 /* ChartModel.swift */,
+				F8064EFF2C7ADCA40022E69B /* SwipeActionView.swift */,
 			);
 			path = ExpenseTracker;
 			sourceTree = "<group>";
@@ -520,6 +523,7 @@
 				F82DC7BA2C7417FE00E73F6B /* Date+Extesnsion.swift in Sources */,
 				F85FD3532C74EE6300E38388 /* NewExpenseView.swift in Sources */,
 				F8B6F48A2C6E57AF0005BBDE /* OtherContents.swift in Sources */,
+				F8064F002C7ADCA40022E69B /* SwipeActionView.swift in Sources */,
 				F8F8BF762C70BEB200F942F5 /* MusicHome.swift in Sources */,
 				F83BB5D42C724FC6005B4EC9 /* Graphs.swift in Sources */,
 				F83BB5D22C724FA3005B4EC9 /* Search.swift in Sources */,

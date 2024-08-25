@@ -18,6 +18,7 @@ struct Recents: View {
     
     @Query(sort: [SortDescriptor(\Transaction.dateAdded, order: .reverse)], animation: .snappy)
     private var transactions: [Transaction]
+    @Environment(\.modelContext) private var modelContext: ModelContext
     
     var body: some View {
         GeometryReader {
@@ -36,15 +37,29 @@ struct Recents: View {
                             .hSpacing(.leading)
                             
                             CardView(income: 100, expense: 200)
+                            
                             segmentControl
                                 .padding(.bottom, 10)
-                            ForEach(transactions.filter { $0.category == selectedCategory.rawValue && $0.dateAdded >= startDate && $0.dateAdded <= endDate }) { transaction in
-                                NavigationLink {
-                                    NewExpenseView(editTransactoion: transaction)
-                                } label: {
-                                    TransactionCardView(transaction: transaction)
-                                }
-                                .buttonStyle(.plain)
+                            ForEach(transactions.filter { $0.category == selectedCategory.rawValue }) { transaction in
+                                SwipeActionView(cornorRadius: 15, direction: .leading, content: {
+                                    NavigationLink {
+                                        NewExpenseView(editTransactoion: transaction)
+                                    } label: {
+                                        TransactionCardView(transaction: transaction)
+                                    }
+                                    .buttonStyle(.plain)
+                                }, actions: {
+                                    SwipeAction(tint: .blue, icon: "star.fill") {
+                                        print("Delete")
+                                    }
+                                    SwipeAction(tint: .red, icon: "trash.fill") {
+                                        print("Delete")
+                                        withAnimation(.snappy) {
+                                            modelContext.delete(transaction)
+                                        }
+                                    }
+                                })
+                                
                             }
                         } header: {
                             headerView(size)
