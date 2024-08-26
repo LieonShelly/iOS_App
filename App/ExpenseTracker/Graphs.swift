@@ -25,7 +25,7 @@ struct Graphs: View {
                     
                     ForEach(chartGroups) { group in
                         VStack(alignment: .leading, spacing: 10) {
-                            Text(group.date.format("MMM yy"))
+                            Text(group.date.format("MMM yyyy"))
                                 .font(.caption)
                                 .foregroundStyle(.gray)
                                 .hSpacing(.leading)
@@ -52,7 +52,7 @@ struct Graphs: View {
         Chart {
             ForEach(chartGroups) { group in
                 ForEach(group.categories) { chart in
-                    BarMark(x: .value("Month", group.date.format("MM yy")),
+                    BarMark(x: .value("Month", group.date.format("MM yyyy")),
                             y: .value(chart.category.rawValue, chart.totalValue),
                             width: 20
                     )

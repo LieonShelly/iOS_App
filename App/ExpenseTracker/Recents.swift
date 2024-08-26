@@ -9,16 +9,18 @@ import SwiftUI
 import SwiftData
 
 struct Recents: View {
+    @Environment(\.modelContext) private var modelContext: ModelContext
     @AppStorage("userName") private var userName: String = ""
     @State private var startDate: Date = .now.startOfMonth
     @State private var endDate: Date = .now.endOfMonth
     @State private var selectedCategory: Category = .expense
     @State private var showFilterView: Bool = false
+    @State private var totalIncome: Double = 0
+    @State private var totalExpense: Double = 0
     @Namespace private var animation
-    
     @Query(sort: [SortDescriptor(\Transaction.dateAdded, order: .reverse)], animation: .snappy)
     private var transactions: [Transaction]
-    @Environment(\.modelContext) private var modelContext: ModelContext
+    
     
     var body: some View {
         GeometryReader {
@@ -27,40 +29,10 @@ struct Recents: View {
                 ScrollView {
                     LazyVStack(spacing: 10, pinnedViews: [.sectionHeaders]) {
                         Section {
-                            Button {
-                                showFilterView = true
-                            } label: {
-                                Text("\(startDate.format("dd - MM yy")) to \(endDate.format("dd - MM yy"))")
-                                    .font(.caption2)
-                                    .foregroundStyle(.gray)
-                            }
-                            .hSpacing(.leading)
-                            
-                            CardView(income: 100, expense: 200)
-                            
-                            segmentControl
-                                .padding(.bottom, 10)
-                            ForEach(transactions.filter { $0.category == selectedCategory.rawValue }) { transaction in
-                                SwipeActionView(cornorRadius: 15, direction: .leading, content: {
-                                    NavigationLink {
-                                        NewExpenseView(editTransactoion: transaction)
-                                    } label: {
-                                        TransactionCardView(transaction: transaction)
-                                    }
-                                    .buttonStyle(.plain)
-                                }, actions: {
-                                    SwipeAction(tint: .blue, icon: "star.fill") {
-                                        print("Delete")
-                                    }
-                                    SwipeAction(tint: .red, icon: "trash.fill") {
-                                        print("Delete")
-                                        withAnimation(.snappy) {
-                                            modelContext.delete(transaction)
-                                        }
-                                    }
-                                })
-                                
-                            }
+                            filterView
+                            CardView(income: totalIncome, expense: totalExpense)
+                            segmentControl.padding(.bottom, 10)
+                            listView
                         } header: {
                             headerView(size)
                         }
@@ -85,6 +57,43 @@ struct Recents: View {
              
             }
             .animation(.snappy, value: showFilterView)
+        }
+    }
+    
+    var filterView: some View {
+        Button {
+            showFilterView = true
+        } label: {
+            Text("\(startDate.format("dd - MM yyyy")) to \(endDate.format("dd - MM yyyy"))")
+                .font(.caption2)
+                .foregroundStyle(.gray)
+        }
+        .hSpacing(.leading)
+    }
+    
+    var listView: some View {
+        ForEach(transactions.filter { $0.category == selectedCategory.rawValue }) { transaction in
+            SwipeActionView(cornorRadius: 15, direction: .leading, content: {
+                NavigationLink {
+                    NewExpenseView(editTransactoion: transaction)
+                } label: {
+                    TransactionCardView(transaction: transaction)
+                }
+                .buttonStyle(.plain)
+            }, actions: {
+                SwipeAction(tint: .blue, icon: "star.fill") {
+                    print("Delete")
+                }
+                SwipeAction(tint: .red, icon: "trash.fill") {
+                    print("Delete")
+                    withAnimation(.snappy) {
+                        modelContext.delete(transaction)
+                    }
+                }
+            })
+        }
+        .onAppear {
+            fetchData()
         }
     }
     
@@ -171,10 +180,49 @@ struct Recents: View {
         .background(.gray.opacity(0.15), in: .capsule)
         .padding(.top, 5)
     }
+    
+    func fetchData() {
+        totalIncome = transactions.filter({ $0.category == Category.income.rawValue}).map { $0.amount }.reduce(0, { $0 + $1 })
+        totalExpense = transactions.filter({ $0.category == Category.expense.rawValue}).map { $0.amount }.reduce(0, { $0 + $1 })
+    }
 }
 
 
 #Preview {
     ContentView()
+        .modelContainer(previewContainer)
 }
  
+
+@MainActor
+let previewContainer: ModelContainer = {
+    do {
+        let container = try ModelContainer(
+            for: Transaction.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let modelContext = container.mainContext
+        if try modelContext.fetch(FetchDescriptor<Transaction>()).isEmpty {
+            sampleTransactions.forEach { container.mainContext.insert($0) }
+        }
+        return container
+    } catch {
+        fatalError("Failed to create container")
+    }
+}()
+
+
+private var sampleTransactions: [Transaction] = [
+    .init(title: "Apple", remarks: "Apple subscribe", amount: 200, dateAdded: Date(), category: .expense, tintColor: .init(color: "Red", value: .red)),
+    .init(title: "Apple", remarks: "Apple subscribe", amount: 200, dateAdded: Date(), category: .expense, tintColor: .init(color: "Blue", value: .blue)),
+    .init(title: "Apple", remarks: "Apple subscribe", amount: 200, dateAdded: Date(), category: .expense, tintColor: .init(color: "Red", value: .yellow)),
+    .init(title: "Apple", remarks: "Apple subscribe", amount: 200, dateAdded: Date(), category: .expense, tintColor: .init(color: "Red", value: .pink)),
+    .init(title: "Apple", remarks: "Apple subscribe", amount: 200, dateAdded: Date(), category: .expense, tintColor: .init(color: "Red", value: .red)),
+    .init(title: "Apple", remarks: "Apple subscribe", amount: 200, dateAdded: Date(), category: .expense, tintColor: .init(color: "Red", value: .red)),
+    .init(title: "App", remarks: "Apple subscribe income", amount: 200, dateAdded: Date(), category: .income, tintColor: .init(color: "Red", value: .red)),
+    .init(title: "App", remarks: "Apple subscribe income", amount: 200, dateAdded: Date(), category: .income, tintColor: .init(color: "Red", value: .pink)),
+    .init(title: "App", remarks: "Apple subscribe income", amount: 200, dateAdded: Date(), category: .income, tintColor: .init(color: "Red", value: .yellow)),
+    .init(title: "App", remarks: "Apple subscribe income", amount: 200, dateAdded: Date(), category: .income, tintColor: .init(color: "Red", value: .purple)),
+    .init(title: "App", remarks: "Apple subscribe income", amount: 200, dateAdded: Date(), category: .income, tintColor: .init(color: "Red", value: .red)),
+    
+]
