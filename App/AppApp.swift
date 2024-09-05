@@ -29,7 +29,7 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            DialogExampleView()
         }
         .modelContainer(sharedModelContainer)
     }
