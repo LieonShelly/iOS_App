@@ -46,6 +46,7 @@
 		F8EB56AB2C6C4AE0005BC760 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EB56AA2C6C4AE0005BC760 /* Home.swift */; };
 		F8EB56AD2C6C4E02005BC760 /* CustomCornor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */; };
 		F8F8BF762C70BEB200F942F5 /* MusicHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F8BF752C70BEB200F942F5 /* MusicHome.swift */; };
+		F8FF4E872C8B597700E9AEFD /* ReorderableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF4E862C8B597700E9AEFD /* ReorderableScrollView.swift */; };
 		F8FF794F2C533DFA0007101A /* AppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF794E2C533DFA0007101A /* AppApp.swift */; };
 		F8FF79512C533DFA0007101A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF79502C533DFA0007101A /* ContentView.swift */; };
 		F8FF79532C533DFA0007101A /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FF79522C533DFA0007101A /* Item.swift */; };
@@ -134,6 +135,7 @@
 		F8EB56AA2C6C4AE0005BC760 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		F8EB56AC2C6C4E02005BC760 /* CustomCornor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCornor.swift; sourceTree = "<group>"; };
 		F8F8BF752C70BEB200F942F5 /* MusicHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicHome.swift; sourceTree = "<group>"; };
+		F8FF4E862C8B597700E9AEFD /* ReorderableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReorderableScrollView.swift; sourceTree = "<group>"; };
 		F8FF794B2C533DFA0007101A /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8FF794E2C533DFA0007101A /* AppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppApp.swift; sourceTree = "<group>"; };
 		F8FF79502C533DFA0007101A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -344,6 +346,14 @@
 			path = AppleMusic;
 			sourceTree = "<group>";
 		};
+		F8FF4E852C8B593200E9AEFD /* ReorderableSroll */ = {
+			isa = PBXGroup;
+			children = (
+				F8FF4E862C8B597700E9AEFD /* ReorderableScrollView.swift */,
+			);
+			path = ReorderableSroll;
+			sourceTree = "<group>";
+		};
 		F8FF79422C533DFA0007101A = {
 			isa = PBXGroup;
 			children = (
@@ -370,6 +380,7 @@
 		F8FF794D2C533DFA0007101A /* App */ = {
 			isa = PBXGroup;
 			children = (
+				F8FF4E852C8B593200E9AEFD /* ReorderableSroll */,
 				F83BB5C62C7245E2005B4EC9 /* ExpenseTracker */,
 				F8F8BF742C70BDA200F942F5 /* AppleMusic */,
 				F8B6F4842C6E4EBD0005BBDE /* Album */,
@@ -589,6 +600,7 @@
 				F85FD3512C74E77100E38388 /* DateFilterView.swift in Sources */,
 				F8FF79532C533DFA0007101A /* Item.swift in Sources */,
 				F8B6F4882C6E4F740005BBDE /* PhotoScrollView.swift in Sources */,
+				F8FF4E872C8B597700E9AEFD /* ReorderableScrollView.swift in Sources */,
 				F85FD34F2C74E19100E38388 /* TransactionCardView.swift in Sources */,
 				F87CF43F2C8A088700146ED8 /* DialogExampleView.swift in Sources */,
 				F8EB56AB2C6C4AE0005BC760 /* Home.swift in Sources */,
