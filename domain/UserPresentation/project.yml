@@ -1,0 +1,34 @@
+---
+include:
+- "../../fastlane/settings.yml"
+name: UserPresentation
+settings:
+  groups:
+  - BaseProjectSetting
+
+targets:
+  UserPresentation:
+    type: framework
+    platform: iOS
+    sources: UserPresentation
+    scheme:
+      testTargets:
+      - UserPresentationTests
+      gatherCoverageData: true
+    settings:
+      groups:
+      - BaseTargetSetting
+  UserPresentationTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+    - path: UserPresentationTests
+      excludes:
+      - "**__Snapshots__/**"
+    dependencies:
+    - target: UserPresentation
+    settings:
+      groups:
+        - BaseTargetSetting
+        - BaseTestTargetSetting
+

@@ -1,0 +1,117 @@
+configs:
+  Debug: debug
+  Release: release
+  Staging: release
+options:
+  developmentLanguage: en
+  
+settingGroups:
+  BaseProjectSetting:
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
+  
+  BaseTargetSetting:
+    base:
+      # build options
+      ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: $(inherited)
+      DEBUG_INFORMATION_FORMAT: dwarf_with_dsym
+      ENABLE_BITCODE: false
+      # Deployment
+      IPHONEOS_DEPLOYMENT_TARGET: 16.0
+      TARGET_DEVICE_FAMILY: 1 # 1 = iPhone
+      # LINKING
+      LLD_RUNPATH_SEARCH_PATH: "$(inherited) @excutable_path/Frameworks @loader_path/Frameworks"
+      # Packing
+      DEFINES_MODULE: true
+      PRODUCT_NAME: "$(TARGET_NAME"
+      # Search paths
+      ALWAYS_SEARCH_USER_PATHS: false
+      FRAMEWORK_SEARCH_PATHS: "$(inherited)"
+      HEADDER_SEARCH_PATHS: "$(inherited)"
+      LIBRARY_SEARCH_PATHS: "$(inherited)"
+      # Signing
+        # CODE_SIGN_ENTITLEMENTS:
+      CODE_SIGN_STYLE: Manul
+      DEVELOPMENT_TEAM: xxxxx #your team number
+       # Versioning
+      CURRENT_PROJECT_VERSION: 1
+      VERSIONING_SYSTEM: apple-generic
+    # Apple LLVM 9.0 - Code Generation
+      GCC_GENERATE_DEBUGGING_SYMBOLS: true
+      GCC_INSTRUMENT_PROGRAM_FLOW_ARCS: false
+      GCC_NO_COMMON_BLOCKS: true
+    # Apple LLVM 9.0 - Custom Compiler Flags
+      OTHER_CFLAGS: $(inherited)
+    # Apple LLVM 9.0 - Language
+      GCC_PRECOMPILE_PREFIX_HEADER: true
+      # GCC_PREFIX_HEADER: $(SRCROOT)/Path/To/PCH
+    # Apple LLVM 9.0 - Language - Modules
+      CLANG_ENABLE_MODULES: true
+    # Apple LLVM 9.0 - Warnings - All languages
+      GCC_WARN_UNUSED_FUNCTION: true
+      GCC_WARN_UNUSED_LABEL: true
+      GCC_WARN_UNUSED_PARAMETER: true
+      GCC_WARN_UNUSED_VARIABLE: true
+    # Swift Compiler - General
+      # SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/Path/To/Header
+    # Swift Compiler - Language
+      SWIFT_VERSION: 5.0
+      ONLY_ACTIVE_ARCH: true
+
+    # User-Defined
+      COMPRESS_PNG_FILES: false
+      CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF: true
+      CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS: true
+      CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
+      CLANG_ANALYZER_LOCALIZABILITY_EMPTY_CONTEXT: true
+
+      ENABLE_NS_ASSERTIONS: false
+    
+    configs:
+      Debug:
+        ENABLE_TESTABILITY: true
+        LLVM_LTO: false
+        OTHER_SWIFT_FLAGS: |-
+          $(inherited) 
+          -DDEBUG 
+          -Xfrontend -debug-time-function-bodies 
+          -Xfrontend -warn-long-function-bodies=400 
+          -Xfrontend -warn-long-expression-type-checking=400 
+        OTHER_LDFLAGS: "$(inherited) -ObjC -lz"
+        ONLY_ACTIVE_ARCH: true
+        SWIFT_OPTIMIZATION_LEVEL: -Onone
+        SWIFT_COMPILATION_MODE: incremental
+        DEBUG_INFORMATION_FORMAT: dwarf
+        COPY_PHASE_STRIP: false
+      Release:
+        ENABLE_TESTABILITY: false
+        LLVM_LTO: false
+        OTHER_SWIFT_FLAGS: "$(inherited) -DRELEASE"
+        OTHER_LDFLAGS: $(inherited)
+        ONLY_ACTIVE_ARCH: true
+        SWIFT_OPTIMIZATION_LEVEL: -O
+        SWIFT_COMPILATION_MODE: wholemodule
+        COPY_PHASE_STRIP: true
+  
+  BaseTestTargetSetting:
+    base:
+      GENERATE_INFOPLIST_FILE: true
+      IPHONEOS_DEPLOYMENT_TARGET: 16.0
+
+schemeTemplates:
+  DefaultSchemeTemplate:
+    templates:
+      - DefaultScheme
+    build:
+      targets:
+        ${scheme_name}: build
+  
+  DefaultScheme:
+    test:
+      gatherCoverageData: true
+      language: en
+      region: US
+      coverageTargets:
+        - name: "${testTargetName}"
+      targets:
+        - name: "${testTargetName}"
+          randomExecutionOrder: false
