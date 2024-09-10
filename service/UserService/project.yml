@@ -1,37 +1,29 @@
 ---
 include:
 - "../../fastlane/settings.yml"
-name: UserPresentation
+name: UserService
 settings:
   groups:
   - BaseProjectSetting
-
 targets:
-  UserPresentation:
+  UserService:
     type: framework
     platform: iOS
-    sources: UserPresentation
-    # define the dependencies your framework need, 
-    # dependencies:
-    # - framework: xxxx.framework
-    #   embed: false
-    #   implicit: true
+    sources: UserService
     scheme:
       testTargets:
-      - UserPresentationTests
+      - UserServiceTests
       gatherCoverageData: true
     settings:
       groups:
       - BaseTargetSetting
-  UserPresentationTests:
+  UserServiceTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-    - path: UserPresentationTests
-      excludes:
-      - "**__Snapshots__/**"
+    - path: UserServiceTests
     dependencies:
-    - target: UserPresentation
+    - target: UserService
     settings:
       groups:
         - BaseTargetSetting
