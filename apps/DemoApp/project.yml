@@ -1,0 +1,57 @@
+---
+include:
+- "../../fastlane/settings.yml"
+name: DemoApp
+settings:
+  groups:
+  - BaseProjectSetting
+options:
+  developmentLanguage: zh-CN
+targets:
+  DemoApp:
+    type: application
+    platform: iOS
+    sources: DemoApp
+    scheme:
+      testTargets:
+      - DemoAppTests
+      gatherCoverageData: true
+      laguage: zh-CN
+      region: CN
+    settings:
+      groups:
+      - BaseTargetSetting
+      base:
+        #CODE_SIGN_ENTITLEMENTS: xx/xx.entitlements
+        DEVELOPMENT_TEAM: xx
+        PRODUCT_BUNDLE_IDENTIFIER: cn.demoapp.dev
+        PROVISIONING_PROFILE_SPECIFIER: xxx
+        CODE_SIGN_IDENTITY: 'xx'
+      configs:
+        Debug:
+          OTHER_SWIFT_FLAGS: "$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
+        Release:
+          OTHER_SWIFT_FLAGS: "$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
+    dependencies:
+      - framework: UserPresentation.framework
+        embed: true
+        implicit: true
+      - framework: UserService.framework
+        embed: true
+        implicit: true
+      - framework: UIComponent.framework
+        embed: true
+        implicit: true
+  
+  DemoAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+    - path: DemoAppTests
+      excludes:
+      - "**__Snapshots__/**"
+    dependencies:
+    - target: DemoApp
+    settings:
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp"
+

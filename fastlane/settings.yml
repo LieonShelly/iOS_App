@@ -16,7 +16,7 @@ settingGroups:
       DEBUG_INFORMATION_FORMAT: dwarf_with_dsym
       ENABLE_BITCODE: false
       # Deployment
-      IPHONEOS_DEPLOYMENT_TARGET: 16.0
+      IPHONEOS_DEPLOYMENT_TARGET: 17.0
       TARGET_DEVICE_FAMILY: 1 # 1 = iPhone
       # LINKING
       LLD_RUNPATH_SEARCH_PATH: "$(inherited) @excutable_path/Frameworks @loader_path/Frameworks"

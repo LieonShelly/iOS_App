@@ -1,0 +1,31 @@
+---
+include:
+- "../../fastlane/settings.yml"
+name: UIComponent
+settings:
+  groups:
+  - BaseProjectSetting
+targets:
+  UIComponent:
+    type: framework
+    platform: iOS
+    sources: UIComponent
+    scheme:
+      testTargets:
+      - UIComponentTests
+      gatherCoverageData: true
+    settings:
+      groups:
+      - BaseTargetSetting
+  UIComponentTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+    - path: UIComponentTests
+    dependencies:
+    - target: UIComponent
+    settings:
+      groups:
+        - BaseTargetSetting
+        - BaseTestTargetSetting
+
