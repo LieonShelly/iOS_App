@@ -1,0 +1,25 @@
+require '../../fastlane/SharedPodfile'
+
+$ios_version = '16.0'
+
+platform :ios, $ios_version
+workspace 'DemoApp'
+inhibit_all_warnings!
+
+$projectPath = '../../'
+$framrworkPath = '../../'
+
+#Pods
+
+user_presentation
+user_service
+uicomponent
+
+target 'DemoApp' do
+    use_frameworks!
+    project 'DemoApp.xcodeproj'
+
+    target 'DemoAppTests' do
+
+    end
+end
