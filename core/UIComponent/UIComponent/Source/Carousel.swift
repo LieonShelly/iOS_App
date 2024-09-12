@@ -12,49 +12,34 @@ struct CarouselItemModel {
     let name: String
     let image: Image
 }
+
 struct CarouselView: View {
+    let spacing: CGFloat = 16
+    let widthOfHiddenCards: CGFloat = 20
+    let cardHeight: CGFloat = 180
+    
+    let items = [
+        CarouselItemModel(id: 0, name: "1. description.", image: Image("image1")),
+        CarouselItemModel(id: 1, name: "2. description.", image: Image("image2")),
+        CarouselItemModel(id: 2, name: "3. description.", image: Image("image3")),
+        CarouselItemModel(id: 3, name: "4. description", image: Image("image4")),
+        CarouselItemModel(id: 4, name: "4. description", image: Image("image4")),
+        CarouselItemModel(id: 5, name: "4. description", image: Image("image4")),
+        CarouselItemModel(id: 6, name: "4. description", image: Image("image4")),
+        CarouselItemModel(id: 7, name: "4. description", image: Image("image4")),
+    ]
     
     var body: some View {
-        let spacing: CGFloat = 8
-        let widthOfHiddenCards: CGFloat = 20
-        let cardHeight: CGFloat = 180
-        
-        let items = [
-            CarouselItemModel(id: 0, name: "1. description.", image: Image("image1")),
-            CarouselItemModel(id: 1, name: "2. description.", image: Image("image2")),
-            CarouselItemModel(id: 2, name: "3. description.", image: Image("image3")),
-            CarouselItemModel(id: 3, name: "4. description", image: Image("image4")),
-            CarouselItemModel(id: 4, name: "4. description", image: Image("image4")),
-            CarouselItemModel(id: 5, name: "4. description", image: Image("image4")),
-            CarouselItemModel(id: 6, name: "4. description", image: Image("image4")),
-            CarouselItemModel(id: 7, name: "4. description", image: Image("image4")),
-        ]
-        
-        
-        return Canvas {
-            Carousel(
-                numberOfItems: CGFloat(items.count),
-                spacing: spacing,
-                widthOfHiddenCards: widthOfHiddenCards
-            ) {
-                ForEach(items, id: \.self.id) { item in
-                    Item(
-                        _id: Int(item.id),
-                        spacing: spacing,
-                        widthOfHiddenCards: widthOfHiddenCards,
-                        cardHeight: cardHeight
-                    ) {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(.red)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .cornerRadius(8)
-                    .transition(AnyTransition.slide)
-                    .animation(.spring)
-                }
-               
+        Carousel(
+            spacing: spacing,
+            widthOfHiddenCards: widthOfHiddenCards,
+            data: items,
+            dataId: \.id) { item in
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.red)
+                    .frame(height: cardHeight)
+                    .frame(maxWidth: .infinity)
             }
-        }
     }
 }
 
@@ -63,113 +48,81 @@ public class UIStateModel: ObservableObject {
     @Published var screenDrag: Float = 0.0
 }
 
-struct Carousel<Items : View> : View {
-    let items: Items
-    let numberOfItems: CGFloat
-    let spacing: CGFloat
-    let widthOfHiddenCards: CGFloat
-    let totalSpacing: CGFloat
-    let cardWidth: CGFloat
-    @GestureState var isDetectingLongPress = false
-    @EnvironmentObject var UIState: UIStateModel
+struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollection, Content: View, ID: Hashable {
+    private let content: (Data.Element) -> Content
+    private let spacing: CGFloat
+    private let widthOfHiddenCards: CGFloat
+    private let cardWidth: CGFloat
+    private let data: Data
+    private let dataId: KeyPath<Data.Element, ID>
+    @State private var activeCard: Int = 0
+    @State private var screenDrag: Float = 0.0
     
-    @inlinable public init(
-        numberOfItems: CGFloat,
-        spacing: CGFloat,
-        widthOfHiddenCards: CGFloat,
-        @ViewBuilder _ items: () -> Items) {
-            self.items = items()
-            self.numberOfItems = numberOfItems
-            self.spacing = spacing
-            self.widthOfHiddenCards = widthOfHiddenCards
-            self.totalSpacing = (numberOfItems - 1) * spacing
-            self.cardWidth = UIScreen.main.bounds.width - (widthOfHiddenCards*2) - (spacing*2)
-        }
-    
+    init(spacing: CGFloat,
+         widthOfHiddenCards: CGFloat,
+         data: Data,
+         dataId: KeyPath<Data.Element, ID>,
+         @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.content = content
+        self.spacing = spacing
+        self.widthOfHiddenCards = widthOfHiddenCards
+        self.cardWidth =  UIScreen.main.bounds.width - (widthOfHiddenCards * 2) - (spacing * 2)
+        self.data = data
+        self.dataId = dataId
+    }
 
     var body: some View {
-        let totalCanvasWidth: CGFloat = (cardWidth * numberOfItems) + totalSpacing
-        let xOffsetToShift = (totalCanvasWidth - UIScreen.main.bounds.width) / 2
+        GeometryReader { proxy in
+             HStack(alignment: .center, spacing: spacing) {
+                 ForEach(data, id: dataId) {
+                     content($0)
+                         .frame(width: cardWidth)
+                 }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
+            .offset(x: xOffset)
+            .animation(.spring, value: xOffset)
+            .gesture(
+                DragGesture()
+                    .onChanged({ currentState in
+                        let totalMovement = cardWidth + spacing
+                        var offset: CGFloat = totalMovement
+                        
+                        if currentState.translation.width > 0 {
+                            offset = min(offset, currentState.translation.width)
+                        } else {
+                            offset = max(-offset, currentState.translation.width)
+                        }
+                        
+                        self.screenDrag = Float(currentState.translation.width)
+                    })
+                    .onEnded { value in
+                        self.screenDrag = 0
+                        let dragThreshold: CGFloat = cardWidth / 3
+                        var activeIndex = self.activeCard
+                        if value.translation.width > dragThreshold {
+                            activeIndex -= 1
+                        }
+                        if value.translation.width < -dragThreshold {
+                            activeIndex += 1
+                        }
+                        let numberOfItems = data.count
+                        self.activeCard = max(0, min(activeIndex, Int(numberOfItems) - 1))
+                    }
+            )
+        }
+    }
+    
+    var xOffset: CGFloat {
         let leftPadding = widthOfHiddenCards + spacing
         let totalMovement = cardWidth + spacing
-        
-        let activeOffset = xOffsetToShift + (leftPadding) - (totalMovement * CGFloat(UIState.activeCard))
-        let nextOffset = xOffsetToShift + (leftPadding) - (totalMovement * CGFloat(UIState.activeCard) + 1)
-        
-        var calcOffset = Float(activeOffset)
-        
-        if (calcOffset != Float(nextOffset)) {
-            calcOffset = Float(activeOffset) + UIState.screenDrag
-        }
-        
-        return HStack(alignment: .center, spacing: spacing) {
-            items
-        }
-        .offset(x: CGFloat(calcOffset), y: 0)
-        .gesture(DragGesture().updating($isDetectingLongPress) { currentState, gestureState, transaction in
-            self.UIState.screenDrag = Float(currentState.translation.width)
-            
-        }.onEnded { value in
-            print(value.translation.width)
-            self.UIState.screenDrag = 0
-            if (value.translation.width < -50) &&  self.UIState.activeCard < Int(numberOfItems) - 1 {
-                self.UIState.activeCard = self.UIState.activeCard + 1
-                let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                impactMed.impactOccurred()
-            }
-            
-            if (value.translation.width > 50) && self.UIState.activeCard > 0 {
-                self.UIState.activeCard = self.UIState.activeCard - 1
-                let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                impactMed.impactOccurred()
-            }
-        })
+        let activeOffset = (totalMovement * CGFloat(activeCard))
+        let calcOffset = leftPadding - activeOffset + CGFloat(screenDrag)
+        return calcOffset
     }
 }
 
-struct Canvas<Content : View> : View {
-    let content: Content
-    @EnvironmentObject var UIState: UIStateModel
-    
-    @inlinable init(@ViewBuilder _ content: () -> Content) {
-        self.content = content()
-    }
-    
-    var body: some View {
-        content
-            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .center)
-        
-    }
-}
-
-struct Item<Content: View>: View {
-    @EnvironmentObject var UIState: UIStateModel
-    let cardWidth: CGFloat
-    let cardHeight: CGFloat
-    
-    var _id: Int
-    var content: Content
-    
-    @inlinable public init(
-        _id: Int,
-        spacing: CGFloat,
-        widthOfHiddenCards: CGFloat,
-        cardHeight: CGFloat,
-        @ViewBuilder _ content: () -> Content
-    ) {
-        self.content = content()
-        self.cardWidth = UIScreen.main.bounds.width - (widthOfHiddenCards*2) - (spacing*2)
-        self.cardHeight = cardHeight
-        self._id = _id
-    }
-    
-    var body: some View {
-        content
-            .frame(width: cardWidth, height: _id == UIState.activeCard ? cardHeight : cardHeight, alignment: .center)
-    }
-}
 
 #Preview {
     CarouselView()
-        .environmentObject(UIStateModel())
 }
