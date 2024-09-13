@@ -13,10 +13,15 @@ struct CarouselItemModel {
     let image: Image
 }
 
-struct CarouselView: View {
+public struct CarouselView: View {
     let spacing: CGFloat = 16
     let widthOfHiddenCards: CGFloat = 20
     let cardHeight: CGFloat = 180
+    @State var currentIndex: Int = 0
+    
+    public init(currentIndex: Int = 0) {
+        self.currentIndex = currentIndex
+    }
     
     let items = [
         CarouselItemModel(id: 0, name: "1. description.", image: Image("image1")),
@@ -29,54 +34,62 @@ struct CarouselView: View {
         CarouselItemModel(id: 7, name: "4. description", image: Image("image4")),
     ]
     
-    var body: some View {
-        Carousel(
-            spacing: spacing,
-            widthOfHiddenCards: widthOfHiddenCards,
-            data: items,
-            dataId: \.id) { item in
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.red)
-                    .frame(height: cardHeight)
-                    .frame(maxWidth: .infinity)
+    public var body: some View {
+        VStack {
+            Carousel(
+                itemInterSpacing: spacing,
+                widthOfHiddenItems: widthOfHiddenCards,
+                currentIndex: $currentIndex,
+                data: items,
+                dataId: \.id) { item in
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(.red)
+                        .frame(height: cardHeight)
+                        .frame(maxWidth: .infinity)
+                }
+            Button {
+                currentIndex += 1
+                if currentIndex >= items.count {
+                    currentIndex = 0
+                }
+            } label: {
+                Text("\(currentIndex)")
             }
+        }
     }
 }
 
-public class UIStateModel: ObservableObject {
-    @Published var activeCard: Int = 0
-    @Published var screenDrag: Float = 0.0
-}
-
-struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollection, Content: View, ID: Hashable {
+public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollection, Content: View, ID: Hashable {
     private let content: (Data.Element) -> Content
-    private let spacing: CGFloat
-    private let widthOfHiddenCards: CGFloat
-    private let cardWidth: CGFloat
+    private let itemInterSpacing: CGFloat
+    private let widthOfHiddenItems: CGFloat
+    private let itemWidth: CGFloat
     private let data: Data
     private let dataId: KeyPath<Data.Element, ID>
-    @State private var activeCard: Int = 0
-    @State private var screenDrag: Float = 0.0
+    @Binding private var currentIndex: Int
+    @State private var dragOffset: CGFloat = 0.0
     
-    init(spacing: CGFloat,
-         widthOfHiddenCards: CGFloat,
+    public init(itemInterSpacing: CGFloat,
+         widthOfHiddenItems: CGFloat,
+         currentIndex: Binding<Int>,
          data: Data,
          dataId: KeyPath<Data.Element, ID>,
          @ViewBuilder content: @escaping (Data.Element) -> Content) {
         self.content = content
-        self.spacing = spacing
-        self.widthOfHiddenCards = widthOfHiddenCards
-        self.cardWidth =  UIScreen.main.bounds.width - (widthOfHiddenCards * 2) - (spacing * 2)
+        self.itemInterSpacing = itemInterSpacing
+        self.widthOfHiddenItems = widthOfHiddenItems
+        self.itemWidth = UIScreen.main.bounds.width - (widthOfHiddenItems * 2) - (itemInterSpacing * 2)
         self.data = data
         self.dataId = dataId
+        self._currentIndex = currentIndex
     }
 
-    var body: some View {
+    public var body: some View {
         GeometryReader { proxy in
-             HStack(alignment: .center, spacing: spacing) {
+             HStack(alignment: .center, spacing: itemInterSpacing) {
                  ForEach(data, id: dataId) {
                      content($0)
-                         .frame(width: cardWidth)
+                         .frame(width: itemWidth)
                  }
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
@@ -85,21 +98,19 @@ struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollection, Co
             .gesture(
                 DragGesture()
                     .onChanged({ currentState in
-                        let totalMovement = cardWidth + spacing
+                        let totalMovement = itemWidth + itemInterSpacing
                         var offset: CGFloat = totalMovement
-                        
                         if currentState.translation.width > 0 {
                             offset = min(offset, currentState.translation.width)
                         } else {
                             offset = max(-offset, currentState.translation.width)
                         }
-                        
-                        self.screenDrag = Float(currentState.translation.width)
+                        self.dragOffset = currentState.translation.width
                     })
                     .onEnded { value in
-                        self.screenDrag = 0
-                        let dragThreshold: CGFloat = cardWidth / 3
-                        var activeIndex = self.activeCard
+                        self.dragOffset = 0
+                        let dragThreshold: CGFloat = itemWidth / 3
+                        var activeIndex = self.currentIndex
                         if value.translation.width > dragThreshold {
                             activeIndex -= 1
                         }
@@ -107,17 +118,17 @@ struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollection, Co
                             activeIndex += 1
                         }
                         let numberOfItems = data.count
-                        self.activeCard = max(0, min(activeIndex, Int(numberOfItems) - 1))
+                        self.currentIndex = max(0, min(activeIndex, Int(numberOfItems) - 1))
                     }
             )
         }
     }
     
     var xOffset: CGFloat {
-        let leftPadding = widthOfHiddenCards + spacing
-        let totalMovement = cardWidth + spacing
-        let activeOffset = (totalMovement * CGFloat(activeCard))
-        let calcOffset = leftPadding - activeOffset + CGFloat(screenDrag)
+        let leftPadding = widthOfHiddenItems + itemInterSpacing
+        let totalMovement = itemWidth + itemInterSpacing
+        let activeOffset = (totalMovement * CGFloat(currentIndex))
+        let calcOffset = leftPadding - activeOffset + CGFloat(self.dragOffset)
         return calcOffset
     }
 }

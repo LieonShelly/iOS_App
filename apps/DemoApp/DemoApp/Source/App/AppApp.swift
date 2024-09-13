@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIComponent
 
 @main
 struct AppApp: App {
@@ -29,8 +30,7 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            DialogExampleView()
+            CarouselView()
         }
-        .modelContainer(sharedModelContainer)
     }
 }
