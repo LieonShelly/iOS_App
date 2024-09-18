@@ -1,3 +1,28 @@
+import '../../../fastlane/SharedFastfile'
+require 'fileutils'
 
 lane :generate do |options|
+    generate_projects
+    install_pods
+end
+
+private_lane :install_pods do |options|
+    clean = options[:clean]
+    if @requires_cocoapods_generation || clean
+        begin
+            cocoapods(try_repo_update_on_error: true)
+        rescue StandardError => e
+            cached_instabug = '../Pods/Instabug'
+            if Dir.exist? cached_instabug
+                FileUtils.rm_r cached_instabug
+                UI.message 'Removed Instabug from the cache'
+            end
+            UI.message 'Trying to run bundle update as Cocoapods installation failed'
+            bundle_install
+            cocoapods(try_repo_update_on_error: false)
+        end
+    else
+        UI.success "Skiping pod install, use clean:true to reinstall pods"
+    end
+    cocoapods(try_repo_update_on_error: true)
 end

@@ -4,5 +4,20 @@
     
     
     
+      
+      <testcase classname="fastlane.lanes" name="0: Switch to generate_projects lane" time="0.000261">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="1: Switch to install_pods lane" time="0.000208">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="2: cocoapods" time="1.355851">
+        
+      </testcase>
+    
   </testsuite>
 </testsuites>

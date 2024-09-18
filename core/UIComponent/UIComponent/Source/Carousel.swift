@@ -47,6 +47,11 @@ public struct CarouselView: View {
                         .frame(height: cardHeight)
                         .frame(maxWidth: .infinity)
                 }
+                .background {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(.blue)
+                        .frame(maxWidth: .infinity)
+                }
             Button {
                 currentIndex += 1
                 if currentIndex >= items.count {

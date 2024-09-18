@@ -1,0 +1,9 @@
+
+lane :generate_projects do |options|
+    project_root = "../../../"
+    Dir["#{project_root}**/project.yml"].sort.each do |project_path|
+        next if project_path.include? 'fastlane'
+        UI.success "Generating project: #{project_path.gsub(project_root, '')}"
+        `xcodegen -q -s #{project_path} --use-cache`
+    end
+end
