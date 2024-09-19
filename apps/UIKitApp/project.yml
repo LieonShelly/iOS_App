@@ -1,0 +1,36 @@
+---
+include:
+- "../../fastlane/settings.yml"
+name: UIKitApp
+settings:
+  groups:
+  - BaseProjectSetting
+options:
+  developmentLanguage: zh-CN
+targets:
+  UIKitApp:
+    type: application
+    platform: iOS
+    sources: UIKitApp
+    scheme:
+      gatherCoverageData: true
+      laguage: zh-CN
+      region: CN
+    settings:
+      groups:
+      - BaseTargetSetting
+      base:
+        #CODE_SIGN_ENTITLEMENTS: xx/xx.entitlements
+        DEVELOPMENT_TEAM: xx
+        PRODUCT_BUNDLE_IDENTIFIER: cn.UIKitApp.dev
+        PROVISIONING_PROFILE_SPECIFIER: xxx
+        CODE_SIGN_IDENTITY: 'xx'
+      configs:
+        Debug:
+          OTHER_SWIFT_FLAGS: "$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
+        Release:
+          OTHER_SWIFT_FLAGS: "$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
+    dependencies:
+      - framework: UIComponent.framework
+        embed: true
+        implicit: true

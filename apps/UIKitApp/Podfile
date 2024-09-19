@@ -1,0 +1,25 @@
+require '../../fastlane/SharedPodfile'
+
+$ios_version = '16.0'
+
+platform :ios, $ios_version
+workspace 'UIKitApp'
+inhibit_all_warnings!
+
+$projectPath = '../../'
+$framrworkPath = '../../'
+
+#Pods
+
+user_presentation
+user_service
+uicomponent
+
+target 'UIKitApp' do
+    use_frameworks!
+    project 'UIKitApp.xcodeproj'
+
+    target 'UIKitAppTests' do
+
+    end
+end

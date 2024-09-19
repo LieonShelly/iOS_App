@@ -7,6 +7,7 @@ ThirdPod = Struct.new(:name, :version, :is_static, :branch, :configurations, :ur
 
 # global third pod
 $zipFoundation = ThirdPod.new('ZIPFoundation', '0.9.18')
+$alamofire = ThirdPod.new('Alamofire', '5.9.1')
 
 def install_third_pod(*third_party_pods)
     third_party_pods.each do |third_party_pod|
@@ -42,7 +43,7 @@ def user_service
         project "#{$projectPath}/service/UserService/UserService.xcodeproj"
         target 'UserServiceTests' do
             inherit! :complete
-            # import third framework here test target need 
+            install_third_pod $alamofire
         end
     end
 end
