@@ -18,6 +18,8 @@ public struct CarouselView: View {
     let widthOfHiddenCards: CGFloat = 20
     let cardHeight: CGFloat = 180
     @State var currentIndex: Int = 0
+    @State var isDragging: Bool = false
+    @State private var dragOffset: CGFloat = 0
     
     public init(currentIndex: Int = 0) {
         self.currentIndex = currentIndex
@@ -35,7 +37,7 @@ public struct CarouselView: View {
     ]
     
     public var body: some View {
-        VStack {
+        ScrollView {
             Carousel(
                 itemInterSpacing: spacing,
                 widthOfHiddenItems: widthOfHiddenCards,
@@ -52,6 +54,7 @@ public struct CarouselView: View {
                         .fill(.blue)
                         .frame(maxWidth: .infinity)
                 }
+                .frame(height: cardHeight)
             Button {
                 currentIndex += 1
                 if currentIndex >= items.count {
@@ -72,7 +75,8 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
     private let data: Data
     private let dataId: KeyPath<Data.Element, ID>
     @Binding private var currentIndex: Int
-    @State private var dragOffset: CGFloat = 0.0
+    @State private var dragOffset: CGFloat = .zero
+    @GestureState private var isGesturePressed: Bool = false
     
     public init(itemInterSpacing: CGFloat,
          widthOfHiddenItems: CGFloat,
@@ -92,18 +96,21 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
     public var body: some View {
         GeometryReader { proxy in
             let itemWidth = proxy.size.width - (widthOfHiddenItems * 2) - (itemInterSpacing * 2)
-             HStack(alignment: .center, spacing: itemInterSpacing) {
-                 ForEach(data, id: dataId) {
-                     content($0)
-                         .frame(width: itemWidth)
-                 }
+            HStack(alignment: .center, spacing: itemInterSpacing) {
+                ForEach(data, id: dataId) {
+                    content($0)
+                        .frame(width: itemWidth)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
             .offset(x: xOffset(itemWidth))
             .animation(.spring, value: xOffset(itemWidth))
             .gesture(
                 DragGesture()
-                    .onChanged({ currentState in
+                    .updating($isGesturePressed, body: { value, gestureState, transaction in
+                        gestureState = true
+                    })
+                  .onChanged({ currentState in
                         let totalMovement = itemWidth + itemInterSpacing
                         var offset: CGFloat = totalMovement
                         if currentState.translation.width > 0 {
@@ -114,8 +121,8 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
                         self.dragOffset = currentState.translation.width
                     })
                     .onEnded { value in
-                        self.dragOffset = 0
-                        let dragThreshold: CGFloat = itemWidth / 3
+                        self.dragOffset = .zero
+                        let dragThreshold: CGFloat = itemWidth / 5
                         var activeIndex = self.currentIndex
                         if value.translation.width > dragThreshold {
                             activeIndex -= 1
@@ -127,6 +134,11 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
                         self.currentIndex = max(0, min(activeIndex, Int(numberOfItems) - 1))
                     }
             )
+            .onChange(of: isGesturePressed) { oldValue, newValue in
+                if !newValue, self.dragOffset != .zero {
+                    self.dragOffset = .zero
+                }
+            }
         }
     }
     
