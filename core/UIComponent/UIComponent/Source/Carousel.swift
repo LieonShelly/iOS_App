@@ -91,6 +91,7 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
 
     public var body: some View {
         GeometryReader { proxy in
+            let itemWidth = proxy.size.width - (widthOfHiddenItems * 2) - (itemInterSpacing * 2)
              HStack(alignment: .center, spacing: itemInterSpacing) {
                  ForEach(data, id: dataId) {
                      content($0)
@@ -98,8 +99,8 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
                  }
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
-            .offset(x: xOffset)
-            .animation(.spring, value: xOffset)
+            .offset(x: xOffset(itemWidth))
+            .animation(.spring, value: xOffset(itemWidth))
             .gesture(
                 DragGesture()
                     .onChanged({ currentState in
@@ -129,7 +130,7 @@ public struct Carousel<Data, ID, Content> : View where Data: RandomAccessCollect
         }
     }
     
-    var xOffset: CGFloat {
+    func xOffset(_ itemWidth: CGFloat) -> CGFloat {
         let leftPadding = widthOfHiddenItems + itemInterSpacing
         let totalMovement = itemWidth + itemInterSpacing
         let activeOffset = (totalMovement * CGFloat(currentIndex))
