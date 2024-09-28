@@ -25,15 +25,15 @@ public struct CarouselView: View {
         self.currentIndex = currentIndex
     }
     
-    let items = [
+    @State var items = [
         CarouselItemModel(id: 0, name: "1. description.", image: Image("image1")),
         CarouselItemModel(id: 1, name: "2. description.", image: Image("image2")),
         CarouselItemModel(id: 2, name: "3. description.", image: Image("image3")),
         CarouselItemModel(id: 3, name: "4. description", image: Image("image4")),
-        CarouselItemModel(id: 4, name: "4. description", image: Image("image4")),
-        CarouselItemModel(id: 5, name: "4. description", image: Image("image4")),
-        CarouselItemModel(id: 6, name: "4. description", image: Image("image4")),
-        CarouselItemModel(id: 7, name: "4. description", image: Image("image4")),
+        CarouselItemModel(id: 4, name: "5. description", image: Image("image4")),
+        CarouselItemModel(id: 5, name: "6. description", image: Image("image4")),
+        CarouselItemModel(id: 6, name: "7. description", image: Image("image4")),
+        CarouselItemModel(id: 7, name: "8. description", image: Image("image4")),
     ]
     
     public var body: some View {
@@ -48,6 +48,10 @@ public struct CarouselView: View {
                         .fill(.red)
                         .frame(height: cardHeight)
                         .frame(maxWidth: .infinity)
+                        .overlay(content: {
+                            Text(item.name)
+                        })
+                        
                 }
                 .background {
                     RoundedRectangle(cornerRadius: 10)
@@ -62,6 +66,17 @@ public struct CarouselView: View {
                 }
             } label: {
                 Text("\(currentIndex)")
+            }
+            
+            Button {
+                items.removeAll(where:{ $0.id == items[currentIndex].id })
+                if currentIndex >= items.count {
+                    currentIndex = 0
+                } else {
+                    currentIndex = currentIndex
+                }
+            } label: {
+                Text("Delete")
             }
         }
     }

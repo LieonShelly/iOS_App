@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DialogExampleView: View {
     @State private var showPopup: Bool = false
+    @State private var inputText: String = ""
     
     var body: some View {
         NavigationStack {
@@ -17,13 +18,28 @@ struct DialogExampleView: View {
             }
             .navigationTitle("Documents")
         }
-        .popView(isPresented: $showPopup) {
-            
-        } content: {
-            CustomAlertWithTextField(show: $showPopup) { password in
-                
+        .sheet(isPresented: $showPopup, content: {
+            VStack {
+                Text("Edit")
+                Text("You can change the name of your device here.")
+                TextField("Place", text: $inputText)
+                    .padding(.horizontal, 20)
+                HStack {
+                    Button("Cancel") {
+                        showPopup.toggle()
+                    }
+                    
+                    Button("Save") {
+                        showPopup.toggle()
+                    }
+                }
             }
-        }
+            
+            .frame(height: 400)
+            .frame(maxWidth: .infinity)
+            .background(.white)
+            .presentationDetents([.height(400)])
+        })
 
     }
 }

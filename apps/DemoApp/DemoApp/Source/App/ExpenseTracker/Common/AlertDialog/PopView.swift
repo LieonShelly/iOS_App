@@ -36,12 +36,16 @@ fileprivate struct PopViewModifier<ViewContent: View>: ViewModifier {
         let screenHeight = screenSize.height
         let animateView = animateView
         
-        content.fullScreenCover(isPresented: $presenFullScreenCover, onDismiss: onDismiss) {
-            ZStack {
+        content
+            .fullScreenCover(isPresented: $presenFullScreenCover, onDismiss: onDismiss) {
+                ZStack(alignment: .bottom) {
                 Rectangle()
                     .fill(Color.black.opacity(0.25))
                     .ignoresSafeArea()
                     .opacity(animateView ? 1 : 0)
+                    .onTapGesture {
+                        isPresented = false
+                    }
                 
                 viewContent
                     .visualEffect({ content, proxy in
@@ -51,7 +55,7 @@ fileprivate struct PopViewModifier<ViewContent: View>: ViewModifier {
                     .presentationBackground(.clear)
                     .task {
                         guard !animateView else { return }
-                        withAnimation(.bouncy(duration: 0.4, extraBounce: 0.05)) {
+                        withAnimation(.easeIn(duration: 0.25)) {
                             self.animateView = true
                         }
                     }
