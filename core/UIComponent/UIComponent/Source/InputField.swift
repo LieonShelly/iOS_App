@@ -57,19 +57,82 @@ struct InputField: View {
             }
         }
     }
+    
+   
 }
 
 struct InputFieldView: View {
     @State var text: String = ""
+    let dateRange: ClosedRange<Date> = {
+        let calendar = Calendar.current
+        let startComponents = DateComponents(year: 2021, month: 12, day: 15)
+        let endComponents = DateComponents(year: 2021, month: 12, day: 30, hour: 23, minute: 59, second: 59)
+        return calendar.date(from:startComponents)!
+        ...
+        calendar.date(from:endComponents)!
+    }()
     
     var body: some View {
-        InputField(text: $text,
-                   placeholder: "请输入",
-                   maxInputCount: 4)
+        VStack {
+            Spacer()
+                .frame(height: 700)
+            DatePicker("Enter your birthday",
+                       selection: $date,
+                       in: dateRange,
+                       displayedComponents: [.date]
+            )
             .padding()
+            .datePickerStyle(.graphical)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(Color.red)
+            .padding()
+            Spacer()
+                .frame(height: 700)
+        }
+       
+        
+        
+        
+     
     }
+    
+    @State private var date = Date.now
 }
 
 #Preview(body: {
     InputFieldView()
 })
+
+
+
+struct CustomDatePickerSyle: DatePickerStyle {
+    
+    var date: Date
+    var text: String?
+    @Binding var isDatePickerVisible: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            Image(systemName: "calendar")
+            Text(text ?? "")
+            Text(date, formatter: DateFormatter.customFormatter)
+                .foregroundStyle(.blue)
+                .font(.body)
+        }
+        .onTapGesture {
+            withAnimation(.bouncy) {
+                isDatePickerVisible.toggle()
+            }
+        }
+        
+    }
+}
+
+/// Maybe declare your custom formatter too
+extension DateFormatter {
+    static let customFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM:d:yyyy"
+        return formatter
+    }()
+}
