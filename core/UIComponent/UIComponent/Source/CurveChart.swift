@@ -34,10 +34,11 @@ var weight: [TestWeight] = [
 ]
 
 
-struct CurveChartHome: View {
+public struct CurveChartHome: View {
+    
     
     var yAxisValues: [Double] {
-        return  [0, 4, 8, 12]
+        return  [0, 8, 16, 24]
     }
     
     var gradientColor: LinearGradient {
@@ -53,8 +54,105 @@ struct CurveChartHome: View {
         )
     }
     
+    public init() { }
     
-    var body: some View {
+    var chart: some View {
+        VStack {
+            Chart {
+                ForEach(weight) { data in
+                    AreaMark(
+                        x: .value("Day", data.date, unit: .day),
+                        yStart: .value("WeightLow", 0),
+                        yEnd: .value("WeightLow",  data.weight)
+                    )
+                  .foregroundStyle(gradientColor)
+                }
+            }
+            .chartLegend(.hidden)
+            .chartXAxis {
+                AxisMarks { _ in
+                }
+            }
+            .chartYAxis(content: {
+                AxisMarks(preset: .inset, position: .trailing, values: yAxisValues) { value in
+                    AxisGridLine(
+                        centered: true,
+                        stroke: StrokeStyle(
+                            lineWidth: 1,
+                            lineCap: .square
+                        )
+                    )
+                   
+                }
+            })
+            .frame(height: 300)
+            .background(Color.yellow)
+            
+            Text("Text").padding(.top, 50)
+        }
+        
+        .frame(height: 300 + 50 + 20)
+      
+    }
+    
+    var chartGrid: some View {
+        ZStack(alignment: .center) {
+            chart
+            GridLineView(lineCount: yAxisValues.count, chartH: 300, lineH: 2)
+        }
+    }
+    
+    public var body: some View {
+        HStack {
+            chartGrid
+            YAxisTextView(
+                chartH: 300, numbers: yAxisValues.map { Int($0) })
+        }
+        .padding(.leading, 20)
+        .padding(.trailing, 20)
+    }
+    
+    @State private var maxTextWith: CGRect = CGRect(x: 0, y: 0, width: 24, height: 0)
+    
+    var lineView: some View {
+        
+        VStack(spacing: 40) {
+            HStack {
+                Rectangle()
+                    .fill(Color.green)
+                    .frame(height: 0.5)
+                Spacer()
+                    .frame(width: 8)
+                Text("1000")
+                    .currentRect($maxTextWith)
+                
+            }
+            
+            HStack {
+                Rectangle()
+                    .fill(Color.green)
+                    .frame(height: 0.5)
+                Spacer()
+                    .frame(width: 8)
+                Text("asdfasd")
+                
+            }
+        }
+       
+    }
+    
+    func roundUpToNextMultipleOf3(value: Double) -> Double {
+        let rounded = ceil(value)
+        let remainder = rounded.truncatingRemainder(dividingBy: 3)
+        
+        return if remainder == 0.0 {
+            rounded
+        } else {
+            rounded + (3 - remainder)
+        }
+    }
+    
+    var barChart: some View {
         
         LazyHStack(alignment: .bottom, spacing: 20) {
             GeometryReader { proxy in
@@ -82,69 +180,6 @@ struct CurveChartHome: View {
             }
            
            
-        }
-//        VStack {
-//            Chart {
-//                ForEach(weight) { data in
-//                    AreaMark(
-//                        x: .value("Day", data.date, unit: .day),
-//                        yStart: .value("WeightLow", 0),
-//                        yEnd: .value("WeightLow",  data.weight)
-//                    )
-//                  .foregroundStyle(gradientColor)
-//                }
-//            }
-//            .chartLegend(.hidden)
-//            .chartXAxis {
-//                AxisMarks { _ in
-//                }
-//            }
-//            .chartYAxis(content: {
-//                AxisMarks(preset: .inset, position: .leading, values: yAxisValues) { value in
-//                    AxisValueLabel(anchor: .leading) {
-//                        Text("kW")
-//                            .foregroundStyle(Color.red)
-//                        
-//                    }
-//                    
-//                    
-//                    AxisGridLine()
-//                }
-//              
-//                
-//                AxisMarks(preset: .inset, position: .trailing, values: yAxisValues) { value in
-//                    
-//                    
-//                    AxisValueLabel(anchor: .bottomTrailing, horizontalSpacing: 0) {
-//                        Text("\(value.as(Int.self) ?? 0)")
-//                    }
-//                    .foregroundStyle(.red)
-//                    .offset(x: 0)
-//                   
-//                }
-//            })
-//            .frame(height: 192)
-//            .background(Color.yellow.opacity(0.1))
-//            .overlay(alignment: .topLeading) {
-//                Text("Overlay")
-//                    .padding(.top, 10)
-//                    .padding(.leading, 10)
-//            }
-//        }
-        .padding(.horizontal, 20)
-        
-       
-      
-    }
-    
-    func roundUpToNextMultipleOf3(value: Double) -> Double {
-        let rounded = ceil(value)
-        let remainder = rounded.truncatingRemainder(dividingBy: 3)
-        
-        return if remainder == 0.0 {
-            rounded
-        } else {
-            rounded + (3 - remainder)
         }
     }
 }
@@ -174,5 +209,87 @@ public struct BarChartCellV3: View {
         }
         .frame(maxHeight: .infinity, alignment: .bottom)
        
+    }
+}
+
+
+private struct PositionPreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+extension View {
+    func currentRect(_ rect: Binding<CGRect>, coordinateSpace: CoordinateSpace = .global) -> some View {
+        self.background(GeometryReader { geo in
+            Color.clear
+                .preference(key: PositionPreferenceKey.self, value: geo.frame(in: coordinateSpace))
+        })
+        .onPreferenceChange(PositionPreferenceKey.self) { value in
+            rect.wrappedValue = value
+        }
+    }
+}
+
+
+struct YAxisTextView: View {
+    let chartH: CGFloat
+    let numbers: [Int]
+    let textH: CGFloat = 20
+    let maxNumberLeading: CGFloat = 8
+    @State private var maxNumberRect: CGRect = .zero
+    
+    var body: some View {
+        let sortNumbers = numbers.sorted(by: { $0 < $1})
+        let maxValue = "\(sortNumbers.last ?? 0)"
+        VStack(spacing: spacing) {
+            HStack {
+                Text(maxValue)
+                    .foregroundStyle(Color.gray)
+                    .currentRect($maxNumberRect)
+            }
+            .padding(.leading, maxNumberLeading)
+            
+            
+            ForEach(sortNumbers.prefix(sortNumbers.count - 1).reversed(), id: \.self) { number in
+                HStack {
+                    Text("\(number)")
+                        .foregroundStyle(Color.red)
+                }
+                .frame(height: textH)
+                .frame(maxWidth: maxNumberRect.width + maxNumberLeading, alignment: .trailing)
+            }
+        }
+        .frame(height: chartH)
+    }
+    
+    var spacing: CGFloat {
+        (chartH - textH * CGFloat(numbers.count - 1)) / CGFloat(numbers.count - 1)
+    }
+    
+}
+
+
+struct GridLineView: View {
+    let lineCount: Int
+    let chartH: CGFloat
+    let lineH: CGFloat
+    
+    var body: some View {
+        VStack(spacing: spacing) {
+            ForEach(0 ..< lineCount, id: \.self) { _ in
+                HStack {
+                    Rectangle()
+                        .fill(Color.red)
+                        .frame(height: lineH)
+                }
+                .frame(height: lineH)
+            }
+        }
+    }
+
+    var spacing: CGFloat {
+        (chartH - lineH * CGFloat(lineCount - 1)) / CGFloat(lineCount - 1)
     }
 }
