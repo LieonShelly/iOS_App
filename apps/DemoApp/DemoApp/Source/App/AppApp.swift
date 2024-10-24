@@ -30,7 +30,7 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CurveChartHome()
+            FullScreenActionSheetHome()
         }
     }
 }
