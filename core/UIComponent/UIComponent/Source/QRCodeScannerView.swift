@@ -9,6 +9,51 @@ import SwiftUI
 import AVFoundation
 import Combine
 
+public struct QRCodeScannerViewHome: View {
+    @ObservedObject var service: ScannerService
+    @State private var viewPosition: CGRect = .zero // 存储位置
+    
+    public init(service: ScannerService) {
+        self.service = service
+    }
+    
+    public var body: some View {
+        ZStack(alignment: .center) {
+            ScrollView {
+                LazyVStack {
+                    ForEach(0 ..< 100, id: \.self) { index in
+                        Text("View:\(index)")
+                            .foregroundStyle(.white)
+                            .background(.yellow)
+                    }
+                }
+            }
+            .padding(.top, viewPosition.maxY)
+            InnerView()
+                .currentRect($viewPosition)
+        }
+    }
+}
+
+struct InnerView: View {
+    @State private var viewPosition: CGRect = .zero // 存储位置
+    var body: some View {
+        VStack {
+            Text("位置: \(viewPosition.origin.x), \(viewPosition.origin.y)")
+                .padding()
+            
+            VStack {
+                Text("View")
+                    .foregroundStyle(.white)
+                    .background(.red)
+                    .currentRect($viewPosition)
+            }
+        }
+        .background(.blue)
+      
+    }
+}
+
 public struct QRCodeScannerView: View {
     enum Constants {
         static let scanPadding: CGFloat = 70
@@ -21,6 +66,10 @@ public struct QRCodeScannerView: View {
     private let lineWidth: CGFloat = Constants.lineWidth
     private let lineH: CGFloat = Constants.lineH
     @ObservedObject var service: ScannerService
+    @State var opacityShowAnimating: Bool = false
+    @State var opacityHiddenAnimating: Bool = false
+    @State private var offsetTimer: Timer?
+    @State private var opacityTimer: Timer?
     
     public init(service: ScannerService) {
         self.service = service
@@ -30,8 +79,10 @@ public struct QRCodeScannerView: View {
         GeometryReader { proxy in
             let parentWidth = proxy.size.width
             let parentH = proxy.size.height
-            let scanSize = parentWidth - Constants.scanPadding * 2
+            let scanSize0 = parentWidth - Constants.scanPadding * 2
+            let scanSize = scanSize0 < 0 ? 0 : scanSize0
             let scanCenter = CGPoint(x: parentWidth * 0.5, y: parentH * 0.5)
+            let scanLineCH = scanSize - 30 < 0 ? 0 : scanSize - 30
             ZStack {
                 QRCodeScannerPreViewView(service: service)
                 Color.black
@@ -116,16 +167,26 @@ public struct QRCodeScannerView: View {
                         }
                     )
                 
-                Rectangle()
-                    .fill(Color.green)
-                    .frame(width: scanSize, height: 2)
-                    .position(x: scanCenter.x, y: scanCenter.y + scanOffset)
-                    .opacity(scanOpacity)
-                    .onAppear {
-                        startOffsetAnimation(scanSize * 0.5, endValue: -scanSize * 0.5)
-                        startOpacityAnimation()
-                    }
+                VStack {
+                    Rectangle()
+                        .fill(Color.green)
+                        .frame(width: scanSize, height: 2)
+                        .offset(y: scanOffset)
+                        .opacity(scanOpacity)
+                        .onAppear {
+                            initAnimation(scanLineCH)
+                            loopAnimation(scanLineCH)
+                        }
+                        .onDisappear {
+                            discardAnimation(scanLineCH)
+                        }
+                            
+                }
+                .frame(width: scanSize, height: scanLineCH)
+                .clipped()
                 
+                
+              
                 titleView
                 bottomView
             }
@@ -156,13 +217,16 @@ public struct QRCodeScannerView: View {
         VStack {
             Spacer()
             HStack {
-                VStack(spacing: 12) {
-                    Image(systemName: "keyboard.fill")
-                        .frame(width: 50, height: 50)
-                    Text("输入设备号")
+                NavigationLink {
+                    Text("Second page")
+                } label: {
+                    VStack(spacing: 12) {
+                        Image(systemName: "keyboard.fill")
+                            .frame(width: 50, height: 50)
+                        Text("输入设备号")
+                    }
+                    .foregroundStyle(.white)
                 }
-                .foregroundStyle(.white)
-                
                 Spacer()
                 
                 VStack(spacing: 12) {
@@ -181,29 +245,44 @@ public struct QRCodeScannerView: View {
         
     }
     
-    private func startOffsetAnimation(_ initValue: CGFloat, endValue: CGFloat) {
-        withAnimation(.easeInOut(duration: 2.0)) {
-            scanOffset = initValue
+    func initAnimation(_ scanLineCH: CGFloat) {
+        scanOpacity = 0.0
+        scanOffset = -scanLineCH * 0.5
+        withAnimation(.easeIn(duration: 2)) {
+            scanOffset = scanLineCH * 0.5
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: {
-            scanOffset = endValue
-            startOffsetAnimation(initValue, endValue: endValue)
+        withAnimation(.easeIn(duration: 0.5)) {
+            scanOpacity = 1
+        }
+    }
+    
+    func loopAnimation(_ scanLineCH: CGFloat) {
+        offsetTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+            scanOffset = -scanLineCH * 0.5
+            withAnimation(.easeIn(duration: 2)) {
+                scanOffset = scanLineCH * 0.5
+            }
+        })
+        opacityTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+            scanOpacity = 0
+            withAnimation(.easeIn(duration: 0.5)) {
+                scanOpacity = 1
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: {
+                withAnimation(.easeIn(duration: 0.5)) {
+                    scanOpacity = 0
+                }
+            })
         })
     }
     
-    private func startOpacityAnimation() {
-        withAnimation(.easeInOut(duration: 0.5)) {
-            scanOpacity = 1.0
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: {
-            withAnimation(.easeInOut(duration: 0.5)) {
-                scanOpacity = 0.0
-            }
-        })
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
-            startOpacityAnimation()
-        })
+    func discardAnimation(_ scanLineCH: CGFloat) {
+        opacityTimer?.invalidate()
+        offsetTimer?.invalidate()
+        opacityTimer = nil
+        offsetTimer = nil
+        scanOpacity = 0.0
+        scanOffset = -scanLineCH * 0.5
     }
 }
 
@@ -230,7 +309,9 @@ struct QRCodeScannerPreViewView: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> UIViewController {
         let viewController = UIViewController()
-        service.setupCamera(viewController: viewController)
+        DispatchQueue.main.async {
+            service.setupCamera(viewController: viewController)
+        }
         return viewController
     }
     
@@ -246,6 +327,7 @@ public class ScannerService: NSObject, AVCaptureMetadataOutputObjectsDelegate, O
         }
     }
     @Published var qrCodeString: String?
+    @Published var permissionDenied: Bool = false
     private var captureSession: AVCaptureSession
     private var cancellables: Set<AnyCancellable> = .init()
     
@@ -309,14 +391,15 @@ public class ScannerService: NSObject, AVCaptureMetadataOutputObjectsDelegate, O
                 } else {
                     return
                 }
-                
-                let previewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession)
-                previewLayer.frame = viewController.view.layer.bounds
-                previewLayer.videoGravity = .resizeAspectFill
-                viewController.view.layer.addSublayer(previewLayer)
+                DispatchQueue.main.async(execute: {
+                    let previewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession)
+                    previewLayer.frame = viewController.view.layer.bounds
+                    previewLayer.videoGravity = .resizeAspectFill
+                    viewController.view.layer.addSublayer(previewLayer)
+                })
                 self.startScanning()
             } else {
-                
+                self?.permissionDenied = true
             }
         }
     }
@@ -349,6 +432,38 @@ public class ScannerService: NSObject, AVCaptureMetadataOutputObjectsDelegate, O
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             stopScanning()
             qrCodeString = stringValue
+        }
+    }
+}
+
+
+
+public extension View {
+    /// Applies the given transform if the given condition evaluates to `true`.
+    /// - Parameters:
+    ///   - condition: The condition to evaluate.
+    ///   - transform: The transform to apply to the source `View`.
+    /// - Returns: Either the original `View` or the modified `View` if the condition is `true`.
+    @ViewBuilder
+    func `if`(_ condition: Bool, transform: (Self) -> some View) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
+    
+    /// Applies the given transform if the value is not nil.
+    /// - Parameters:
+    ///   - value: Optional value.
+    ///   - transform: The transform to apply to the source `View`.
+    /// - Returns: Either the original `View` or the modified `View` if the value is not nil.
+    @ViewBuilder
+    func `if`<T>(_ value: T?, transform: (Self, T) -> some View) -> some View {
+        if let value {
+            transform(self, value)
+        } else {
+            self
         }
     }
 }
