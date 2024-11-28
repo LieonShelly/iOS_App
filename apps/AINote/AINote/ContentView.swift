@@ -10,25 +10,19 @@ import Cocoa
 import ApplicationServices
 
 struct ContentView: View {
-    @StateObject private var shortcutManager = ShortcutManager()
+ 
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-            
-            
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-            
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Button {
+                openWindow(id: "popupWindow")
+            } label: {
+                Image(systemName: "globe")
+                    .imageScale(.large)
+                    .foregroundStyle(.tint)
+                Text("New window!")
+            }
         }
         .padding()
         .onAppear {

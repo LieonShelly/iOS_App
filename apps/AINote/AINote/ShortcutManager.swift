@@ -7,6 +7,9 @@
 
 import Foundation
 import HotKey
+import ScreenCaptureKit
+import AppKit
+import SwiftUI
 
 class ShortcutManager: NSObject, ObservableObject {
     var hotKey: HotKey
