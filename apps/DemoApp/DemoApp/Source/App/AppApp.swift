@@ -36,200 +36,226 @@ struct AppApp: App {
     }
 }
 
-struct MonthlyHoursOfSunshine: Identifiable {
-    var city: String
-    var date: Date
-    var hoursOfSunshine: Double
+
+struct DemoContentView: View {
+    @State var items: [Int] = [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11]
+    @State var isRefreshing: Bool = false
     
-    var id: String = UUID().uuidString
+    var body: some View {
+        LazyVStack {
+            ForEach(items, id: \.self) { index in
+                HStack {
+                    Text("index\(index)")
+                }
+                .frame(height: 40)
+            }
+        }
+        .refreshable(isRefreshing: $isRefreshing) {
+            refresh()
+        }
+    }
+    
+    func refresh() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: {
+            items = [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11].shuffled()
+            self.isRefreshing = false
+        })
+    }
+    
+}
 
-
-    init(city: String, month: Int, hoursOfSunshine: Double) {
-        let calendar = Calendar.autoupdatingCurrent
-        self.city = city
-        self.date = calendar.date(from: DateComponents(year: 2020, month: month))!
-        self.hoursOfSunshine = hoursOfSunshine
+public extension View {
+    @ViewBuilder
+    func refreshable(threshold: CGFloat = 80,
+                     isRefreshing: Binding<Bool>,
+                     refreshHandler: @escaping (() -> Void)) -> some View {
+        modifier(
+            Refreshable(
+                threshold: threshold,
+                isRefreshing: isRefreshing,
+                refreshHandler: refreshHandler
+            )
+        )
     }
 }
 
-
-struct DemoContentView: View {
+public struct Refreshable: ViewModifier {
+    private var isRefreshing: Binding<Bool>
+    private let threshold: CGFloat
+    private let refreshHandler: (() -> Void)?
     
-    let data: [MonthlyHoursOfSunshine] = [
-        MonthlyHoursOfSunshine(city: "Seattle", month: 1, hoursOfSunshine: 7.3),
-
-        MonthlyHoursOfSunshine(city: "Seattle", month: 1, hoursOfSunshine: 2),
-       
-        MonthlyHoursOfSunshine(city: "Seattle", month: 2, hoursOfSunshine: 7.3),
-        // ...
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 3, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 4, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 5, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 6, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 7, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 8, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 9, hoursOfSunshine: 7.3),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 10, hoursOfSunshine: 7.3),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 11, hoursOfSunshine: 7.3),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 12, hoursOfSunshine: 7.3),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 17, hoursOfSunshine: 7.2),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 13, hoursOfSunshine: 2),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 14, hoursOfSunshine: 7.3),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 15, hoursOfSunshine: 7.3),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 16, hoursOfSunshine: 7.2),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 17, hoursOfSunshine: 7.2),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 18, hoursOfSunshine: 7.2),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 19, hoursOfSunshine: 7.2),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 20, hoursOfSunshine: 7.2),
-        
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 21, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 22, hoursOfSunshine: 7.1),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 23, hoursOfSunshine: 7.1),
-        
-        MonthlyHoursOfSunshine(city: "Seattle", month: 24, hoursOfSunshine: 0),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 25, hoursOfSunshine: 0),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 26, hoursOfSunshine: 0),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 27, hoursOfSunshine: 0),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 28, hoursOfSunshine: 0),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 29, hoursOfSunshine: 0),
-//        MonthlyHoursOfSunshine(city: "Seattle", month: 30, hoursOfSunshine: 0),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 31, hoursOfSunshine: 0),
-        MonthlyHoursOfSunshine(city: "Seattle", month: 32, hoursOfSunshine: 5),
-    ]
-    
-    var fittingDomain: ClosedRange<Double> {
-        var maxValue = (data.map { $0.hoursOfSunshine }.max() ?? 0) * 1.25
-        maxValue = roundUpToNextMultipleOf3(value: maxValue)
-        maxValue = maxValue > 3 ? maxValue : 3
-
-        return 0 ... maxValue
+    public init(threshold: CGFloat = 80,
+                isRefreshing: Binding<Bool>,
+                refreshHandler: (() -> Void)? = nil) {
+        self.isRefreshing = isRefreshing
+        self.threshold = threshold
+        self.refreshHandler = refreshHandler
     }
     
-    var yAxisValues: [Double] {
-        var array: [Double] = []
-        var maxValue = (data.map { $0.hoursOfSunshine }.max() ?? 1) * 1.25
-        
-        maxValue = roundUpToNextMultipleOf3(value: maxValue)
-        
-        if maxValue > 3 {
-            array.append(maxValue)
-            array.append(maxValue / 3 * 2)
-            array.append(maxValue / 3)
-      
-            array.append(0)
-       
-          
-          
-        } else {
-            array = [0, 1, 2, 3]
-        }
-        
-        return array
+    public func body(content: Content) -> some View {
+        RefreshableScrollView(
+            threshold: threshold,
+            isRefreshing: isRefreshing,
+            content: { content },
+            refreshHandler: refreshHandler
+        )
+    }
+}
+
+private struct RefreshableScrollView<Content: View>: View {
+    @State private var preOffset: CGFloat = 0
+    @State private var offset: CGFloat = 0
+    @State private var rotation: Angle = .degrees(0)
+    @Binding private var isRefreshing: Bool
+    @State var state: RefreshState = .idle
+    @State var rectH: CGFloat = 0
+    private let threshold: CGFloat
+    private let content: Content
+    private let refreshHandler: (() -> Void)?
+    @State private var scrollOffset: CGFloat = 0
+    @State private var contentOffset: CGFloat = 0
+    @State private var isEligable: Bool = false
+    @State private var progress: CGFloat = 0
+    
+    enum RefreshState {
+        case willRefresh // offset > threshold, preOffset <= threshold
+        case refreshing // offset <= threshold, preOffset > threshold
+        case idle
     }
     
-    func roundUpToNextMultipleOf3(value: Double) -> Double {
-        let rounded = ceil(value)
-        let remainder = rounded.truncatingRemainder(dividingBy: 3)
-        
-        return if remainder == 0.0 {
-            rounded
-        } else {
-            rounded + (3 - remainder)
-        }
+    init(threshold: CGFloat = 80,
+         isRefreshing: Binding<Bool>,
+         @ViewBuilder content: () -> Content,
+         refreshHandler: (() -> Void)? = nil) {
+        self.threshold = threshold
+        self._isRefreshing = isRefreshing
+        self.content = content()
+        self.refreshHandler = refreshHandler
     }
     
     var body: some View {
-        Chart(data) {
-            AreaMark(x: .value("Index", index($0)),
-                     y: .value("Value", $0.hoursOfSunshine))
-            .interpolationMethod(.monotone)
-                .foregroundStyle(LinearGradient(gradient: Gradient(colors: [
-                    Color.red.opacity(0.8),
-                    Color.red.opacity(0)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom))
-            
-            LineMark(
-                x: .value("Index", index($0)),
-                y: .value("Hours of Sunshine", $0.hoursOfSunshine)
-            )
-            .interpolationMethod(.monotone)
-            .foregroundStyle(by: .value("City", $0.city))
+        ScrollView(showsIndicators: false) {
+            ZStack(alignment: .top) {
+                PositionView(viewType: .moving)
+                VStack(spacing: .zero) {
+                    Rectangle()
+                        .fill(.red)
+                        .frame(height: rectH)
+                        .overlay(content: {
+                            Rectangle()
+                                .fill(.black)
+                                .frame(width: 20, height: 20)
+                                .rotationEffect(rotation)
+                        })
+                       
+                        .offset(y: isEligable ? -contentOffset : -scrollOffset )
+                    content
+                }
+            }
         }
-        .chartYScale(domain: fittingDomain)
-        .chartXAxis(content: {
-            AxisMarks { _ in
+        .background(PositionView(viewType: .fixed))
+        .onPreferenceChange(RefreshPreferenceTypes.RefreshPreferenceKey.self) { values in
+            self.calculate(values)
+        }
+        .onChange(of: state) { newState in
+            switch newState {
+            case .refreshing:
+                refreshHandler?()
+                isRefreshing = true
+                rectH = threshold
+                
+            case .idle:
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        rectH = 0
+                        progress = 0
+                    }
+                }
+            default: break
             }
-        })
-        .chartYAxis(content: {
-            AxisMarks(preset: .inset, position: .trailing, values: yAxisValues) { _ in
-                AxisGridLine(
-                    centered: true,
-                    stroke: StrokeStyle(
-                        lineWidth: 0.5,
-                        lineCap: .square
-                    )
-                )
-                .foregroundStyle(.red)
+        }
+        .onChange(of: isRefreshing) { isRefreshing in
+            if !isRefreshing {
+                state = .idle
             }
-        })
-        
-        .frame(height: 300)
-        .padding(.horizontal, 20)
-        .onAppear {
-            
-            let uniqueMeasurementPoints = measurementPoints.removingDuplicatesByTimestamp()
-            print(uniqueMeasurementPoints)
-
         }
     }
     
-    func index(_ data: MonthlyHoursOfSunshine) -> Int {
-        return self.data.firstIndex(where: { $0.id == data.id}) ?? 0
+    private func calculate(_ values: [RefreshPreferenceTypes.RefreshPreferenceData]) {
+        DispatchQueue.main.async {
+            let movingBounds = values.first(where: { $0.viewType == .moving })?.bounds ?? .zero
+            let fixedBounds = values.first(where: { $0.viewType == .fixed })?.bounds ?? .zero
+            offset = movingBounds.minY - fixedBounds.minY
+            rotation = headerRotation(offset)
+            if state == .idle, offset > threshold, preOffset <= threshold {
+                state = .willRefresh
+            } else if state == .willRefresh, offset <= threshold, preOffset > threshold {
+                state = .refreshing
+            }
+            contentOffset = offset
+           
+            if !isEligable {
+                scrollOffset = offset
+            }
+            switch state {
+            case .willRefresh:
+                rectH = threshold
+            case .refreshing:
+                rectH = threshold
+                isEligable = offset > threshold
+            case .idle:
+                progress = headerProgress(offset)
+                rectH = progress * threshold
+            }
+            preOffset = offset
+            print("calculate-rectH:\(rectH) - offset:\(offset) -state:\(state)")
+        }
+    }
+    
+    private func headerRotation(_ offset: CGFloat) -> Angle {
+        let height = Double(self.threshold)
+        let distance = Double(offset)
+        let value = max(min(distance - (height * 0.6), height * 0.4), 0)
+        return .degrees(360 * value / (height * 0.4))
+    }
+    
+    private func headerProgress(_ offset: CGFloat) -> CGFloat {
+        let height = Double(self.threshold)
+        let distance = Double(offset)
+        let value = max(min(distance - (height * 0.6), height * 0.4), 0)
+        return value / (height * 0.4)
     }
 }
 
-public struct AggregatedPowerCurveV2DTO: Codable, Equatable {
-    let sessionId: Int
-    let startTimeStamp: String
-    let endTimeStamp: String
-    let measurementPoints: [MeasurementPoint]
-}
-
-// MARK: - MeasurementPoint
-public struct MeasurementPoint: Codable, Equatable {
-    let timestamp: String
-    let energyGrid: TotalEnergy
-    let energySolar: TotalEnergy
-    let energy: TotalEnergy
-    let energyCost: TotalEnergy
-}
-
-// MARK: - TotalEnergy
-public struct TotalEnergy: Codable, Equatable {
-    let value: Double
-    let zero: Bool
-}
-
-
-extension Array where Element == MeasurementPoint {
-    func removingDuplicatesByTimestamp() -> [MeasurementPoint] {
-        var seenTimestamps = Set<String>()
-        return self.filter { measurementPoint in
-            if seenTimestamps.contains(measurementPoint.timestamp) {
-                return false
-            } else {
-                seenTimestamps.insert(measurementPoint.timestamp)
-                return true
-            }
+private struct PositionView: View {
+    let viewType: RefreshPreferenceTypes.ViewType
+    var body: some View {
+        GeometryReader { proxy in
+            Color
+                .clear
+                .preference(key: RefreshPreferenceTypes.RefreshPreferenceKey.self,
+                            value: [RefreshPreferenceTypes.RefreshPreferenceData(viewType: viewType, bounds: proxy.frame(in: .global))])
         }
     }
 }
 
-// 使用示例
-var measurementPoints: [MeasurementPoint] = [
-    MeasurementPoint(timestamp: "2024-11-22T10:00:00", energyGrid: TotalEnergy(value: 10, zero: false), energySolar: TotalEnergy(value: 20, zero: false), energy: TotalEnergy(value: 30, zero: false), energyCost: TotalEnergy(value: 5, zero: false)),
-    MeasurementPoint(timestamp: "2024-11-22T13:00:00", energyGrid: TotalEnergy(value: 15, zero: false), energySolar: TotalEnergy(value: 25, zero: false), energy: TotalEnergy(value: 35, zero: false), energyCost: TotalEnergy(value: 10, zero: false)),
-    MeasurementPoint(timestamp: "2024-11-22T11:00:00", energyGrid: TotalEnergy(value: 12, zero: false), energySolar: TotalEnergy(value: 22, zero: false), energy: TotalEnergy(value: 32, zero: false), energyCost: TotalEnergy(value: 7, zero: false))
-]
+private enum RefreshPreferenceTypes {
+    enum ViewType: Int {
+        case fixed
+        case moving
+    }
+    
+    struct RefreshPreferenceData: Equatable {
+        let viewType: ViewType
+        let bounds: CGRect
+    }
+    
+    struct RefreshPreferenceKey: PreferenceKey {
+        static var defaultValue: [RefreshPreferenceData] = []
+        static func reduce(value: inout [RefreshPreferenceData],
+                           nextValue: () -> [RefreshPreferenceData]) {
+            value.append(contentsOf: nextValue())
+        }
+    }
+}
+
