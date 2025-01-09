@@ -38,16 +38,26 @@ struct AppApp: App {
 
 
 struct DemoContentView: View {
-    @State var items: [Int] = [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11]
+    @State var items: [Int] = [1, 2, 3, 4, 5, 6, 7, 9, 91, 10, 11]
     @State var isRefreshing: Bool = false
     
     var body: some View {
         LazyVStack {
             ForEach(items, id: \.self) { index in
                 HStack {
-                    Text("index\(index)")
+                    Text("index\(index) - \(UUID().uuidString)")
+                    VStack {
+                        Rectangle().fill(.red)
+                            .frame(width: 50, height: 50)
+                        
+                        Rectangle().fill(.blue)
+                            .frame(width: 50, height: 50)
+                    }
+                    VStack {
+                        Rectangle().fill(.yellow)
+                        Rectangle().fill(.purple)
+                    }
                 }
-                .frame(height: 40)
             }
         }
         .refreshable(isRefreshing: $isRefreshing) {
@@ -56,7 +66,7 @@ struct DemoContentView: View {
     }
     
     func refresh() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: {
             items = [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11].shuffled()
             self.isRefreshing = false
         })
@@ -151,12 +161,11 @@ private struct RefreshableScrollView<Content: View>: View {
             case .willRefresh:
                 break
             case .refreshing:
-                refreshHandler?()
-                isRefreshing = true
-                withAnimation(.easeIn(duration: 0.2), completionCriteria: .removed) {
+                withAnimation(.easeIn(duration: 5), completionCriteria: .removed) {
                     isLoading = true
                 } completion: {
                     refreshHandler?()
+                    isRefreshing = true
                 }
             case .idle:
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
