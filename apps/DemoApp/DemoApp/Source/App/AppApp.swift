@@ -56,7 +56,7 @@ struct DemoContentView: View {
     }
     
     func refresh() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
             items = [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11].shuffled()
             self.isRefreshing = false
         })
@@ -107,15 +107,11 @@ private struct RefreshableScrollView<Content: View>: View {
     @State private var offset: CGFloat = 0
     @State private var rotation: Angle = .degrees(0)
     @Binding private var isRefreshing: Bool
+    @State var isLoading: Bool = false
     @State var state: RefreshState = .idle
-    @State var rectH: CGFloat = 0
     private let threshold: CGFloat
     private let content: Content
     private let refreshHandler: (() -> Void)?
-    @State private var scrollOffset: CGFloat = 0
-    @State private var contentOffset: CGFloat = 0
-    @State private var isEligable: Bool = false
-    @State private var progress: CGFloat = 0
     
     enum RefreshState {
         case willRefresh // offset > threshold, preOffset <= threshold
@@ -137,20 +133,13 @@ private struct RefreshableScrollView<Content: View>: View {
         ScrollView(showsIndicators: false) {
             ZStack(alignment: .top) {
                 PositionView(viewType: .moving)
-                VStack(spacing: .zero) {
-                    Rectangle()
-                        .fill(.red)
-                        .frame(height: rectH)
-                        .overlay(content: {
-                            Rectangle()
-                                .fill(.black)
-                                .frame(width: 20, height: 20)
-                                .rotationEffect(rotation)
-                        })
-                       
-                        .offset(y: isEligable ? -contentOffset : -scrollOffset )
-                    content
-                }
+                content.alignmentGuide(
+                    .top,
+                    computeValue: { _ in
+                        isLoading ? -threshold + max(0, offset) : 0
+                    }
+                )
+                headerView
             }
         }
         .background(PositionView(viewType: .fixed))
@@ -159,19 +148,22 @@ private struct RefreshableScrollView<Content: View>: View {
         }
         .onChange(of: state) { newState in
             switch newState {
+            case .willRefresh:
+                break
             case .refreshing:
                 refreshHandler?()
                 isRefreshing = true
-                rectH = threshold
-                
+                withAnimation(.easeIn(duration: 0.2), completionCriteria: .removed) {
+                    isLoading = true
+                } completion: {
+                    refreshHandler?()
+                }
             case .idle:
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation(.easeIn(duration: 0.3)) {
-                        rectH = 0
-                        progress = 0
+                    withAnimation(.easeIn(duration: 0.2)) {
+                        isLoading = false
                     }
                 }
-            default: break
             }
         }
         .onChange(of: isRefreshing) { isRefreshing in
@@ -179,6 +171,21 @@ private struct RefreshableScrollView<Content: View>: View {
                 state = .idle
             }
         }
+    }
+    
+    var headerView: some View {
+        HStack(alignment: .center) {
+            Group {
+                if isLoading {
+                    PorscheSpinner()
+                } else {
+                    Spinner(degress: rotation)
+                }
+            }
+            .offset(y: isLoading ? -max(0, offset) : -threshold)
+            
+        }
+        .frame(height: threshold)
     }
     
     private func calculate(_ values: [RefreshPreferenceTypes.RefreshPreferenceData]) {
@@ -192,23 +199,7 @@ private struct RefreshableScrollView<Content: View>: View {
             } else if state == .willRefresh, offset <= threshold, preOffset > threshold {
                 state = .refreshing
             }
-            contentOffset = offset
-           
-            if !isEligable {
-                scrollOffset = offset
-            }
-            switch state {
-            case .willRefresh:
-                rectH = threshold
-            case .refreshing:
-                rectH = threshold
-                isEligable = offset > threshold
-            case .idle:
-                progress = headerProgress(offset)
-                rectH = progress * threshold
-            }
             preOffset = offset
-            print("calculate-rectH:\(rectH) - offset:\(offset) -state:\(state)")
         }
     }
     
@@ -218,13 +209,51 @@ private struct RefreshableScrollView<Content: View>: View {
         let value = max(min(distance - (height * 0.6), height * 0.4), 0)
         return .degrees(360 * value / (height * 0.4))
     }
+}
+
+private struct Spinner: View {
+    var degress: Angle = .degrees(69)
+    var size: CGFloat = 20
     
-    private func headerProgress(_ offset: CGFloat) -> CGFloat {
-        let height = Double(self.threshold)
-        let distance = Double(offset)
-        let value = max(min(distance - (height * 0.6), height * 0.4), 0)
-        return value / (height * 0.4)
+    var body: some View {
+        Rectangle()
+            .fill(.red)
+            .frame(width: 20, height: 20)
+            .frame(width: size, height: size)
+            .rotationEffect(degress)
     }
+}
+
+
+private struct PorscheSpinner: View {
+    var degress: Angle = .degrees(69)
+    var size: CGFloat = 20
+    @State private var isLoading = false
+    
+    var body: some View {
+           ZStack {
+               GeometryReader { geometry in
+                   let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                   
+                   Rectangle()
+                       .fill(.yellow)
+                       .frame(width: size, height: size)
+                       .position(center) // 固定黄色矩形的中心
+                   
+                   Rectangle()
+                       .fill(.blue)
+                       .frame(width: size, height: size)
+                       .position(center) // 固定蓝色矩形的中心
+                       .rotationEffect(.degrees(isLoading ? 360 : 0), anchor: .center)
+                       .animation(
+                        .linear(duration: 1.2).repeatForever(autoreverses: false),
+                           value: isLoading
+                       )
+               }
+               .frame(width: size, height: size)
+           }
+           .onAppear { isLoading = true }
+       }
 }
 
 private struct PositionView: View {
@@ -258,4 +287,3 @@ private enum RefreshPreferenceTypes {
         }
     }
 }
-
