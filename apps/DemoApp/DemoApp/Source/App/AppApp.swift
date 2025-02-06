@@ -31,268 +31,200 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            DemoContentView()
+            DemoLineView()
         }
     }
 }
 
-
-struct DemoContentView: View {
-    @State var items: [Int] = [1, 2, 3, 4, 5, 6, 7, 9, 91, 10, 11]
-    @State var isRefreshing: Bool = false
+struct DemoLineView: View {
+    enum Constants {
+        static let startRounding: Double = 10
+        static let spacingBetweenBars: CGFloat = 4
+        static let graphHeight: CGFloat = 143
+        static let gridNumberOffset: CGFloat = 24
+        static let viewHeight: CGFloat = 241
+        static let yNumberH: CGFloat = 20
+        static let ySpacing: CGFloat = 21
+        static let lineH: CGFloat = 0.5
+        static let chartH = yNumberH * 4 + ySpacing * 3
+    }
+    
+    var gridLineMax: Int = 10
+    var yNumbers: [Int] {
+        [
+            gridLineMax,
+            gridLineMax * 2 / 3,
+            gridLineMax * 1 / 3,
+            0
+        ]
+    }
     
     var body: some View {
-        LazyVStack {
-            ForEach(items, id: \.self) { index in
+        VStack(alignment: .leading) {
+            titleView
+            graphView
+        }
+        .background(.yellow)
+        .roundedCorner(8, corners: .allCorners)
+        .padding()
+    }
+    
+    var graphView: some View {
+        HStack(spacing: .zero) {
+            ZStack {
+                GridLineView(
+                    lineCount: yNumbers.count,
+                    chartH: Constants.chartH,
+                    lineH: 0.5
+                )
+//                .background(.red)
+//                barView
+            }
+            yAxisTextView
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 24)
+    }
+    
+    var yAxisTextView: some View {
+        YAxisTextView(chartH: Constants.chartH, numbers: yNumbers)
+    }
+    
+    var titleView: some View {
+        HStack {
+            Text("title")
+                .font(.headline)
+                .foregroundColor(.black)
+            Spacer()
+            
+            Text("kWh")
+                //.bodySmallWithSecondary()
+        }
+        .frame(height: 44)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 20 + 10)
+    }
+}
+
+struct YAxisTextView: View {
+    let chartH: CGFloat
+    let numbers: [Int]
+    let textH: CGFloat = 20
+    let maxNumberLeading: CGFloat = 8
+    @State private var maxNumberRect: CGRect = .zero
+    
+    var body: some View {
+        let sortNumbers = numbers.sorted(by: { $0 < $1 })
+        let maxValue = "\(sortNumbers.last ?? 0)"
+        VStack(spacing: spacing) {
+            HStack {
+                Text(maxValue)
+                   // .bodySmallWithSecondary()
+                    .currentRect($maxNumberRect)
+            }
+            .padding(.leading, maxNumberLeading)
+            
+            ForEach(sortNumbers.prefix(sortNumbers.count - 1).reversed(), id: \.self) { number in
                 HStack {
-                    Text("index\(index) - \(UUID().uuidString)")
-                    VStack {
-                        Rectangle().fill(.red)
-                            .frame(width: 50, height: 50)
-                        
-                        Rectangle().fill(.blue)
-                            .frame(width: 50, height: 50)
-                    }
-                    VStack {
-                        Rectangle().fill(.yellow)
-                        Rectangle().fill(.purple)
-                    }
+                    Text("\(number)")
+                        //.bodySmallWithSecondary()
                 }
+                .frame(height: textH)
+                .frame(maxWidth: maxNumberRect.width + maxNumberLeading, alignment: .trailing)
             }
         }
-        .refreshable(isRefreshing: $isRefreshing) {
-            refresh()
+        .frame(height: chartH)
+    }
+    
+    var spacing: CGFloat {
+        (chartH - textH * CGFloat(numbers.count - 1)) / CGFloat(numbers.count - 1)
+    }
+}
+
+struct GridLineView: View {
+    let lineCount: Int
+    let chartH: CGFloat
+    let lineH: CGFloat
+    
+    var body: some View {
+        VStack(spacing: spacing) {
+            ForEach(0 ..< lineCount, id: \.self) { _ in
+                PreciseDivider(color: .gray, lineWidth: lineH)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+    
+    var spacing: CGFloat {
+        (chartH - lineH * CGFloat(lineCount - 1)) / CGFloat(lineCount - 1)
+    }
+}
+
+struct PreciseDivider: View {
+    var color: Color = .gray
+    var lineWidth: CGFloat = 0.5 // 设置线宽
+    
+    var body: some View {
+        GeometryReader { geometry in
+            Path { path in
+                let y = geometry.size.height / 2 // 居中绘制线条
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+            }
+            .stroke(color, lineWidth: lineWidth)
+        }
+        .frame(height: lineWidth) // 高度设置为线宽
+    }
+}
+
+
+
+extension View {
+    func currentRect(_ rect: Binding<CGRect>, coordinateSpace: CoordinateSpace = .global) -> some View {
+        overlay(content: {
+            GeometryReader { geometry in
+                Color.clear
+                    .preference(key: PositionPreferenceKey.self, value: geometry.frame(in: .global))
+            }
+        })
+        .onPreferenceChange(PositionPreferenceKey.self) { value in
+            rect.wrappedValue = value
         }
     }
+}
+
+private struct PositionPreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+
+
+public struct RoundedCorner: Shape {
+    let radius: CGFloat
+    let corners: UIRectCorner
     
-    func refresh() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: {
-            items = [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11].shuffled()
-            self.isRefreshing = false
-        })
+    public init(radius: CGFloat = .infinity, corners: UIRectCorner = .allCorners) {
+        self.radius = radius
+        self.corners = corners
     }
     
+    public func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
 }
 
 public extension View {
-    @ViewBuilder
-    func refreshable(threshold: CGFloat = 80,
-                     isRefreshing: Binding<Bool>,
-                     refreshHandler: @escaping (() -> Void)) -> some View {
-        modifier(
-            Refreshable(
-                threshold: threshold,
-                isRefreshing: isRefreshing,
-                refreshHandler: refreshHandler
-            )
-        )
+    func roundedCorner(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
     }
-}
 
-public struct Refreshable: ViewModifier {
-    private var isRefreshing: Binding<Bool>
-    private let threshold: CGFloat
-    private let refreshHandler: (() -> Void)?
-    
-    public init(threshold: CGFloat = 80,
-                isRefreshing: Binding<Bool>,
-                refreshHandler: (() -> Void)? = nil) {
-        self.isRefreshing = isRefreshing
-        self.threshold = threshold
-        self.refreshHandler = refreshHandler
-    }
-    
-    public func body(content: Content) -> some View {
-        RefreshableScrollView(
-            threshold: threshold,
-            isRefreshing: isRefreshing,
-            content: { content },
-            refreshHandler: refreshHandler
-        )
-    }
-}
-
-private struct RefreshableScrollView<Content: View>: View {
-    @State private var preOffset: CGFloat = 0
-    @State private var offset: CGFloat = 0
-    @State private var rotation: Angle = .degrees(0)
-    @Binding private var isRefreshing: Bool
-    @State var isLoading: Bool = false
-    @State var state: RefreshState = .idle
-    private let threshold: CGFloat
-    private let content: Content
-    private let refreshHandler: (() -> Void)?
-    
-    enum RefreshState {
-        case willRefresh // offset > threshold, preOffset <= threshold
-        case refreshing // offset <= threshold, preOffset > threshold
-        case idle
-    }
-    
-    init(threshold: CGFloat = 80,
-         isRefreshing: Binding<Bool>,
-         @ViewBuilder content: () -> Content,
-         refreshHandler: (() -> Void)? = nil) {
-        self.threshold = threshold
-        self._isRefreshing = isRefreshing
-        self.content = content()
-        self.refreshHandler = refreshHandler
-    }
-    
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-            ZStack(alignment: .top) {
-                PositionView(viewType: .moving)
-                content.alignmentGuide(
-                    .top,
-                    computeValue: { _ in
-                        isLoading ? -threshold + max(0, offset) : 0
-                    }
-                )
-                headerView
-            }
-        }
-        .background(PositionView(viewType: .fixed))
-        .onPreferenceChange(RefreshPreferenceTypes.RefreshPreferenceKey.self) { values in
-            self.calculate(values)
-        }
-        .onChange(of: state) { newState in
-            switch newState {
-            case .willRefresh:
-                break
-            case .refreshing:
-                withAnimation(.easeIn(duration: 5), completionCriteria: .removed) {
-                    isLoading = true
-                } completion: {
-                    refreshHandler?()
-                    isRefreshing = true
-                }
-            case .idle:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation(.easeIn(duration: 0.2)) {
-                        isLoading = false
-                    }
-                }
-            }
-        }
-        .onChange(of: isRefreshing) { isRefreshing in
-            if !isRefreshing {
-                state = .idle
-            }
-        }
-    }
-    
-    var headerView: some View {
-        HStack(alignment: .center) {
-            Group {
-                if isLoading {
-                    PorscheSpinner()
-                } else {
-                    Spinner(degress: rotation)
-                }
-            }
-            .offset(y: isLoading ? -max(0, offset) : -threshold)
-            
-        }
-        .frame(height: threshold)
-    }
-    
-    private func calculate(_ values: [RefreshPreferenceTypes.RefreshPreferenceData]) {
-        DispatchQueue.main.async {
-            let movingBounds = values.first(where: { $0.viewType == .moving })?.bounds ?? .zero
-            let fixedBounds = values.first(where: { $0.viewType == .fixed })?.bounds ?? .zero
-            offset = movingBounds.minY - fixedBounds.minY
-            rotation = headerRotation(offset)
-            if state == .idle, offset > threshold, preOffset <= threshold {
-                state = .willRefresh
-            } else if state == .willRefresh, offset <= threshold, preOffset > threshold {
-                state = .refreshing
-            }
-            preOffset = offset
-        }
-    }
-    
-    private func headerRotation(_ offset: CGFloat) -> Angle {
-        let height = Double(self.threshold)
-        let distance = Double(offset)
-        let value = max(min(distance - (height * 0.6), height * 0.4), 0)
-        return .degrees(360 * value / (height * 0.4))
-    }
-}
-
-private struct Spinner: View {
-    var degress: Angle = .degrees(69)
-    var size: CGFloat = 20
-    
-    var body: some View {
-        Rectangle()
-            .fill(.red)
-            .frame(width: 20, height: 20)
-            .frame(width: size, height: size)
-            .rotationEffect(degress)
-    }
-}
-
-
-private struct PorscheSpinner: View {
-    var degress: Angle = .degrees(69)
-    var size: CGFloat = 20
-    @State private var isLoading = false
-    
-    var body: some View {
-           ZStack {
-               GeometryReader { geometry in
-                   let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
-                   
-                   Rectangle()
-                       .fill(.yellow)
-                       .frame(width: size, height: size)
-                       .position(center) // 固定黄色矩形的中心
-                   
-                   Rectangle()
-                       .fill(.blue)
-                       .frame(width: size, height: size)
-                       .position(center) // 固定蓝色矩形的中心
-                       .rotationEffect(.degrees(isLoading ? 360 : 0), anchor: .center)
-                       .animation(
-                        .linear(duration: 1.2).repeatForever(autoreverses: false),
-                           value: isLoading
-                       )
-               }
-               .frame(width: size, height: size)
-           }
-           .onAppear { isLoading = true }
-       }
-}
-
-private struct PositionView: View {
-    let viewType: RefreshPreferenceTypes.ViewType
-    var body: some View {
-        GeometryReader { proxy in
-            Color
-                .clear
-                .preference(key: RefreshPreferenceTypes.RefreshPreferenceKey.self,
-                            value: [RefreshPreferenceTypes.RefreshPreferenceData(viewType: viewType, bounds: proxy.frame(in: .global))])
-        }
-    }
-}
-
-private enum RefreshPreferenceTypes {
-    enum ViewType: Int {
-        case fixed
-        case moving
-    }
-    
-    struct RefreshPreferenceData: Equatable {
-        let viewType: ViewType
-        let bounds: CGRect
-    }
-    
-    struct RefreshPreferenceKey: PreferenceKey {
-        static var defaultValue: [RefreshPreferenceData] = []
-        static func reduce(value: inout [RefreshPreferenceData],
-                           nextValue: () -> [RefreshPreferenceData]) {
-            value.append(contentsOf: nextValue())
-        }
+    func roundedBorder(_ radius: CGFloat, corners: UIRectCorner = .allCorners, borderColor: Color, borderWidth: CGFloat) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+            .overlay { RoundedRectangle(cornerRadius: radius).stroke(borderColor, lineWidth: borderWidth) }
     }
 }
