@@ -31,7 +31,7 @@ struct AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            DemoLineView()
+            MomentListView()
         }
     }
 }
