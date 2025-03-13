@@ -16,7 +16,7 @@ int main() {
 
     Customer customer("A Customer");
 
-    ShoppingCart shopping_cart(customer, {products});
+    ShoppingCart shopping_cart(customer, products);
     Product product3(30.0, "DIS_10_PRODUCT3", "product 3");
     shopping_cart.AddProduct(product3);
     
@@ -27,4 +27,5 @@ int main() {
 
     Order order = shopping_cart.Checkout();
     std::cout << order << std::endl;
+
 }

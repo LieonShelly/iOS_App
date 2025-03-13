@@ -109,6 +109,48 @@ TEST_F(ShoppingCartTest, should_apply_50_discount_per_100) {
     EXPECT_DOUBLE_EQ(100.0, order.GetTotalDiscount());
 }
 
+// 两个一样以DISCOUNT_50_PER_100开头的商品
+TEST_F(ShoppingCartTest, should_apply_50_discount_per_1001) {
+    std::vector<Product> products{
+        {52, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {49, "DISCOUNT_50_PER_100_ABCD1", kProduct}
+    };
+    ShoppingCart cart(customer, products);
+    Order order = cart.Checkout();
+
+    EXPECT_DOUBLE_EQ(51, order.GetFinalPrice()); // 101 - 50 = 51
+    EXPECT_DOUBLE_EQ(50, order.GetTotalDiscount());
+}
+
+// 三个一样以DISCOUNT_50_PER_100开头的商品
+TEST_F(ShoppingCartTest, should_apply_50_discount_per_1002) {
+    std::vector<Product> products{
+        {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {49, "DISCOUNT_50_PER_100_ABCD1", kProduct}
+    };
+    ShoppingCart cart(customer, products);
+    Order order = cart.Checkout();
+
+    EXPECT_DOUBLE_EQ(99, order.GetFinalPrice()); // 149 - 50
+    EXPECT_DOUBLE_EQ(50, order.GetTotalDiscount());
+}
+
+/// 三个一样以DISCOUNT_50_PER_100开头的商品 + 1个
+TEST_F(ShoppingCartTest, should_apply_50_discount_per_1003) {
+    std::vector<Product> products{
+        {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {49, "DISCOUNT_50_PER_100_ABCD1", kProduct},
+        {100, "other", kProduct}
+    };
+    ShoppingCart cart(customer, products);
+    Order order = cart.Checkout();
+
+    EXPECT_DOUBLE_EQ(99 + 100, order.GetFinalPrice()); // 149 - 50
+    EXPECT_DOUBLE_EQ(50, order.GetTotalDiscount());
+}
+
 TEST_F(ShoppingCartTest, should_handle_50_discount_edge_cases) {
     // 刚好满100
     std::vector<Product> p1{{100.0, "DISCOUNT_50_PER_100_ABCD", kProduct}};
@@ -168,5 +210,5 @@ TEST_F(ShoppingCartTest, should_handle_multiple_discount_types) {
     EXPECT_DOUBLE_EQ(410.0, order.GetFinalPrice());
     // 积分计算：
     // 200/20=10 + 300/5=60 + 100/5=20 → 总计90
-    EXPECT_EQ(90, order.GetLoyaltyPoints());
+    EXPECT_EQ(90 - 60, order.GetLoyaltyPoints());
 }

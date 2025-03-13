@@ -11,7 +11,8 @@ Order ShoppingCart::Checkout() {
     double original_total = 0;
     double product_discounts = 0;
     int loyalty_points_earned = 0;
-
+    double price_discount_50_per_100 = 0;
+    
     for(auto &product : products_) {
         const double price = product.GetPrice();
         original_total += price;
@@ -28,15 +29,16 @@ Order ShoppingCart::Checkout() {
             discount = price * 0.20;
             loyalty_points_earned += static_cast<int>(price / 20);
         } else if (code.find("DISCOUNT_50_PER_100") == 0) {
-            int multiples = static_cast<int>(price) / 100;
-            discount = multiples * 50;
-            loyalty_points_earned += static_cast<int>(price / 5);
+            price_discount_50_per_100 += price;
         } else {
             loyalty_points_earned += static_cast<int>(price / 5);
         }
-        
         product_discounts += discount;
     }
+    
+    int multiples = static_cast<int>(price_discount_50_per_100) / 100;
+    price_discount_50_per_100 = multiples * 50;
+    product_discounts += price_discount_50_per_100;
     
     double subtotal = original_total - product_discounts;
     double total_discount = product_discounts;
