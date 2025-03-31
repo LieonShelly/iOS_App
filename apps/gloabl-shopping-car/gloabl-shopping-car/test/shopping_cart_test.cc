@@ -100,13 +100,13 @@ TEST_F(ShoppingCartTest, should_calculate_loyalty_points_for_20_percent_discount
 // 测试满100减50优惠
 TEST_F(ShoppingCartTest, should_apply_50_discount_per_100) {
     std::vector<Product> products{
-        {250.0, "DISCOUNT_50_PER_100_ABCD", kProduct} // 250/100=2 → 2*50=100
+        {550.0, "DISCOUNT_50_PER_100_ABCD", kProduct} // 250/100=2 → 2*50=100
     };
     ShoppingCart cart(customer, products);
     Order order = cart.Checkout();
 
-    EXPECT_DOUBLE_EQ(150.0, order.GetFinalPrice()); // 250 - 100 = 150
-    EXPECT_DOUBLE_EQ(100.0, order.GetTotalDiscount());
+    EXPECT_DOUBLE_EQ(300.0, order.GetFinalPrice()); // 250 - 100 = 150
+    EXPECT_DOUBLE_EQ(250, order.GetTotalDiscount());
 }
 
 // 两个一样以DISCOUNT_50_PER_100开头的商品
@@ -125,18 +125,18 @@ TEST_F(ShoppingCartTest, should_apply_50_discount_per_1001) {
 // 三个一样以DISCOUNT_50_PER_100开头的商品
 TEST_F(ShoppingCartTest, should_apply_50_discount_per_1002) {
     std::vector<Product> products{
-        {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
-        {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
-        {49, "DISCOUNT_50_PER_100_ABCD1", kProduct}
+        {36, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {100, "DISCOUNT_50_PER_100_ABCD", kProduct},
+        {100, "DISCOUNT_50_PER_100_ABCD1", kProduct}
     };
     ShoppingCart cart(customer, products);
     Order order = cart.Checkout();
 
-    EXPECT_DOUBLE_EQ(99, order.GetFinalPrice()); // 149 - 50
-    EXPECT_DOUBLE_EQ(50, order.GetTotalDiscount());
+    EXPECT_DOUBLE_EQ(136, order.GetFinalPrice()); // 149 - 50
+    EXPECT_DOUBLE_EQ(100, order.GetTotalDiscount());
 }
 
-/// 三个一样以DISCOUNT_50_PER_100开头的商品 + 1个
+/// 三个一样以DISCOUNT_50_PER_100开头的商品 + 1个，单价低于100
 TEST_F(ShoppingCartTest, should_apply_50_discount_per_1003) {
     std::vector<Product> products{
         {50, "DISCOUNT_50_PER_100_ABCD", kProduct},
