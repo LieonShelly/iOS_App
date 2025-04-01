@@ -44,33 +44,64 @@ struct ContentView: View {
     @State var cardList: [Int] = [0, 1, 2, 3, 4]
     
     var carListView: some View {
-        
-        VStack(spacing: 0) {
-            CardListView(data: $cardList, dataId: \.self) { item in
-                HStack {
-                    Text("\(item)")
-                        .foregroundColor(.white)
+        CardListView(data: $cardList, dataId: \.self) { item in
+            VStack(alignment: .leading, spacing: 8) {
+                // 电量显示
+                Text("360 kWh")
+                    .font(.system(size: 20, weight: .medium))
+                
+                HStack(alignment: .bottom, spacing: 4) {
+                    // 当前价格
+                    Text("¥")
+                        .font(.system(size: 14))
+                        .baselineOffset(2)
+                    Text("599")
+                        .font(.system(size: 20, weight: .medium))
+                    // 原价
+                    Text("¥957.6")
+                        .font(.system(size: 12))
+                        .strikethrough()
+                        .foregroundColor(.gray)
                 }
-                .frame(height: 124)
-                .frame(maxWidth: .infinity)
-                .background(content: {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(.red)
-                })
+                
+                // 分割虚线
+                GeometryReader { geometry in
+                    Path { path in
+                        path.move(to: CGPoint(x: 20, y: 0))
+                        path.addLine(to: CGPoint(x: geometry.size.width - 20, y: 0))
+                    }
+                    .stroke(style: StrokeStyle(
+                        lineWidth: 1,
+                        dash: [4, 4]
+                    ))
+                    .foregroundColor(.red.opacity(0.2))
+                }
+                .frame(height: 1)
+                .padding(.vertical, 8)
+                
+                // 有效期
+                Text("有效期: 365天")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
             }
-            .frame(height: 124)
-        
+            
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.red)
+                    .overlay(content: {
+                        Image(.cardBg)
+                            .resizable()
+                            .scaledToFill()
+                    })
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            )
+            .padding(16)
         }
+        .frame(height: 124)
+    
         .padding(.top, 20)
         .background(.white)
-    }
-    
-    var header: some View {
-        Rectangle()
-            .fill(.black)
-            .frame(height: 80)
-            .clipShape(RoundedCornerShape(radius: 10, corners: [.topLeft, .topRight]))
-            .padding(.horizontal, 20)
     }
     
     var cornorView: some View {
@@ -90,23 +121,53 @@ struct ContentView: View {
     var shadowView: some View {
         RoundedCornerShape(radius: 8, corners: [.topLeft, .topRight])
             .fill(Color.shadow)
-            .offset(y: -12)
+            .offset(y: -8)
             .blur(radius: 20)
             .frame(height: 13)
     }
     
     var body: some View {
-        
-        VStack(spacing: .zero) {
-            ZStack(alignment: .bottom) {
-                shadowView
-                header
-                cornorView
-            }
+        VStack {
+            cardHeader
             carListView
-            
             Spacer()
         }
+    }
+    
+    var cardHeader: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                shadowView
+                headerView(proxy)
+                cornorView
+            }
+        }
+    }
+    @ViewBuilder
+    func headerView(_ proxy: GeometryProxy) -> some View {
+        let width = proxy.size.width - 20 * 2
+        let height = width * 88 / 335
+        VStack(alignment: .leading, spacing: .zero) {
+            Image(.logo)
+                .frame(width: 116, height: 8)
+                .padding(.top, 16)
+                .padding(.leading, 16)
+            
+            Text("保时捷尊享充电卡")
+                .font(.subheadline)
+                .padding(.top, 16)
+                .padding(.leading, 16)
+            Spacer()
+        }
+        .frame(height: height)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Image(.cardBg)
+                .resizable()
+                .scaledToFill()
+        )
+        .clipShape(RoundedCornerShape(radius: 10, corners: [.topLeft, .topRight]))
+        .padding(.horizontal, 20)
     }
         
 }
