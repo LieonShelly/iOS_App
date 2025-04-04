@@ -107,13 +107,22 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         let imageAspect = imageSize.width / imageSize.height
         let viewAspect = viewSize.width / viewSize.height
         
-        var scaleX: Float = 1.0
+        // 计算左右两侧各20pt的间距对应的规范化坐标
+        let padding: CGFloat = 20.0
+        let paddingRatio = (padding * 2) / viewSize.width
+        let maxWidth = 1.0 - paddingRatio
+        
+        var scaleX: Float = Float(maxWidth)
         var scaleY: Float = 1.0
         
-        if imageAspect > viewAspect {
-            scaleY = Float(viewAspect / imageAspect)
+        let effectiveViewAspect = viewSize.width * (1.0 - paddingRatio) / viewSize.height
+        
+        if imageAspect > effectiveViewAspect {
+            // 图像宽度适应屏幕宽度减去padding
+            scaleY = Float(effectiveViewAspect / imageAspect)
         } else {
-            scaleX = Float(imageAspect / viewAspect)
+            // 图像高度适应屏幕高度
+            scaleX = Float(imageAspect / viewAspect * maxWidth)
         }
         
         let quadVertices: [Float] = [
