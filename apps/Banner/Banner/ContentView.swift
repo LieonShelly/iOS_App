@@ -94,12 +94,18 @@ struct ContentView: View {
                             .resizable()
                             .scaledToFill()
                     })
+                    .overlay(alignment: .topTrailing, content: {
+                        Text("限购")
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(.red)
+                    })
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             )
             .padding(16)
         }
         .frame(height: 124)
-    
         .padding(.top, 20)
         .background(.white)
     }
@@ -120,7 +126,7 @@ struct ContentView: View {
     
     var shadowView: some View {
         RoundedCornerShape(radius: 8, corners: [.topLeft, .topRight])
-            .fill(Color.shadow)
+            .fill(Color(.shadow))
             .offset(y: -8)
             .blur(radius: 20)
             .frame(height: 13)
@@ -130,28 +136,27 @@ struct ContentView: View {
         VStack {
             cardHeader
             carListView
-            Spacer()
         }
     }
     
     var cardHeader: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                shadowView
-                headerView(proxy)
-                cornorView
-            }
+        ZStack(alignment: .bottom) {
+            shadowView
+            headerView
+            cornorView
         }
+        .clipped()
     }
     @ViewBuilder
-    func headerView(_ proxy: GeometryProxy) -> some View {
-        let width = proxy.size.width - 20 * 2
-        let height = width * 88 / 335
+    var headerView: some View {
+        let width = UIScreen.main.bounds.width - 20 * 2
+        let height = width * 88.0 / 335.0
         VStack(alignment: .leading, spacing: .zero) {
             Image(.logo)
                 .frame(width: 116, height: 8)
                 .padding(.top, 16)
                 .padding(.leading, 16)
+                .background(.red)
             
             Text("保时捷尊享充电卡")
                 .font(.subheadline)
@@ -161,12 +166,16 @@ struct ContentView: View {
         }
         .frame(height: height)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            Image(.cardBg)
-                .resizable()
-                .scaledToFill()
-        )
-        .clipShape(RoundedCornerShape(radius: 10, corners: [.topLeft, .topRight]))
+        .background(alignment: .top, content: {
+            Rectangle()
+                .frame(width: width, height: width * 438 / 1005)
+                .overlay(alignment: .top, content: {
+                    Image(.cardBg)
+                        .resizable()
+                        .scaledToFit()
+                })
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+        })
         .padding(.horizontal, 20)
     }
         

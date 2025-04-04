@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "pexels-pixabay-531321.jpg",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -9,7 +10,6 @@
       "scale" : "2x"
     },
     {
-      "filename" : "充电卡带底纹_@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

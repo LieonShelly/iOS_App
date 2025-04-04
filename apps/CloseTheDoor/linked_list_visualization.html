@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>链表插入操作演示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        input, button, select {
+            padding: 8px 12px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #visualization {
+            margin-top: 30px;
+            min-height: 200px;
+            position: relative;
+        }
+        .node {
+            display: inline-flex;
+            align-items: center;
+            margin: 10px;
+            transition: all 0.5s ease;
+        }
+        .node-box {
+            width: 60px;
+            height: 60px;
+            background-color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            position: relative;
+        }
+        .node-pointer {
+            width: 40px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .node-pointer:after {
+            content: "→";
+            font-size: 24px;
+        }
+        .head-pointer {
+            position: absolute;
+            top: -30px;
+            left: 20px;
+            font-weight: bold;
+            color: #d63384;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            border-color: #ffc107;
+            animation: pulse 1s infinite;
+        }
+        .new-node {
+            background-color: #b3e5fc;
+            border-color: #03a9f4;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .explanation {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>链表插入操作演示</h1>
+        
+        <div class="controls">
+            <input type="number" id="value-input" placeholder="输入节点值" min="0" max="99">
+            <select id="insert-position">
+                <option value="prepend">在头部插入</option>
+                <option value="append">在尾部插入</option>
+                <option value="after">在指定节点后插入</option>
+            </select>
+            <input type="number" id="after-node-input" placeholder="节点位置" min="0" max="99" style="display: none;">
+            <button id="insert-btn">插入节点</button>
+            <button id="reset-btn">重置</button>
+        </div>
+        
+        <div id="visualization">
+            <!-- 链表可视化区域 -->
+        </div>
+        
+        <div class="explanation" id="explanation">
+            请选择插入操作并输入节点值。
+        </div>
+        
+        <div class="log" id="log">
+            <!-- 操作日志 -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const insertPositionSelect = document.getElementById('insert-position');
+            const afterNodeInput = document.getElementById('after-node-input');
+            const valueInput = document.getElementById('value-input');
+            const insertBtn = document.getElementById('insert-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const visualization = document.getElementById('visualization');
+            const explanation = document.getElementById('explanation');
+            const log = document.getElementById('log');
+            
+            let linkedList = [];
+            
+            // 显示/隐藏"在指定节点后插入"的输入框
+            insertPositionSelect.addEventListener('change', function() {
+                if (this.value === 'after') {
+                    afterNodeInput.style.display = 'inline-block';
+                } else {
+                    afterNodeInput.style.display = 'none';
+                }
+            });
+            
+            // 插入节点操作
+            insertBtn.addEventListener('click', function() {
+                const value = parseInt(valueInput.value);
+                if (isNaN(value)) {
+                    addLog('请输入有效的节点值');
+                    return;
+                }
+                
+                const position = insertPositionSelect.value;
+                
+                if (position === 'prepend') {
+                    prependNode(value);
+                } else if (position === 'append') {
+                    appendNode(value);
+                } else if (position === 'after') {
+                    const afterIndex = parseInt(afterNodeInput.value);
+                    if (isNaN(afterIndex) || afterIndex < 0 || afterIndex >= linkedList.length) {
+                        addLog('请输入有效的节点位置');
+                        return;
+                    }
+                    insertAfterNode(afterIndex, value);
+                }
+                
+                valueInput.value = '';
+                afterNodeInput.value = '';
+            });
+            
+            // 重置链表
+            resetBtn.addEventListener('click', function() {
+                linkedList = [];
+                renderLinkedList();
+                explanation.textContent = '链表已重置。请选择插入操作并输入节点值。';
+                addLog('链表已重置');
+            });
+            
+            // 在头部插入节点
+            function prependNode(value) {
+                // 演示步骤
+                addLog(`在链表头部插入值为 ${value} 的新节点`);
+                explanation.innerHTML = `
+                    <strong>头部插入步骤：</strong><br>
+                    1. 创建一个新节点，值为 ${value}<br>
+                    2. 将新节点的下一个指针指向原来的头节点<br>
+                    3. 更新头指针，指向新节点
+                `;
+                
+                // 更新链表数据
+                linkedList.unshift(value);
+                
+                // 重新渲染链表
+                renderLinkedList();
+                
+                // 高亮新插入的节点
+                highlightNode(0);
+            }
+            
+            // 在尾部插入节点
+            function appendNode(value) {
+                addLog(`在链表尾部插入值为 ${value} 的新节点`);
+                
+                if (linkedList.length === 0) {
+                    explanation.innerHTML = `
+                        <strong>空链表尾部插入步骤：</strong><br>
+                        1. 创建一个新节点，值为 ${value}<br>
+                        2. 将头指针指向这个新节点
+                    `;
+                } else {
+                    explanation.innerHTML = `
+                        <strong>尾部插入步骤：</strong><br>
+                        1. 创建一个新节点，值为 ${value}<br>
+                        2. 遍历到链表的最后一个节点<br>
+                        3. 将最后一个节点的下一个指针指向新节点
+                    `;
+                }
+                
+                // 更新链表数据
+                linkedList.push(value);
+                
+                // 重新渲染链表
+                renderLinkedList();
+                
+                // 高亮新插入的节点
+                highlightNode(linkedList.length - 1);
+            }
+            
+            // 在指定节点后插入
+            function insertAfterNode(index, value) {
+                addLog(`在索引为 ${index} 的节点后插入值为 ${value} 的新节点`);
+                explanation.innerHTML = `
+                    <strong>指定节点后插入步骤：</strong><br>
+                    1. 创建一个新节点，值为 ${value}<br>
+                    2. 找到索引为 ${index} 的节点（值为 ${linkedList[index]}）<br>
+                    3. 将新节点的下一个指针指向原节点的下一个节点<br>
+                    4. 将原节点的下一个指针指向新节点
+                `;
+                
+                // 更新链表数据
+                linkedList.splice(index + 1, 0, value);
+                
+                // 重新渲染链表
+                renderLinkedList();
+                
+                // 高亮新插入的节点
+                highlightNode(index + 1);
+            }
+            
+            // 渲染链表
+            function renderLinkedList() {
+                visualization.innerHTML = '';
+                
+                if (linkedList.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.textContent = '空链表';
+                    emptyMsg.style.textAlign = 'center';
+                    emptyMsg.style.padding = '50px 0';
+                    emptyMsg.style.color = '#777';
+                    visualization.appendChild(emptyMsg);
+                    return;
+                }
+                
+                const listContainer = document.createElement('div');
+                listContainer.style.display = 'flex';
+                listContainer.style.alignItems = 'center';
+                listContainer.style.position = 'relative';
+                
+                // 添加头指针标记
+                const headPointer = document.createElement('div');
+                headPointer.textContent = 'head';
+                headPointer.className = 'head-pointer';
+                listContainer.appendChild(headPointer);
+                
+                linkedList.forEach((value, index) => {
+                    const nodeElement = document.createElement('div');
+                    nodeElement.className = 'node';
+                    
+                    const nodeBox = document.createElement('div');
+                    nodeBox.className = 'node-box';
+                    nodeBox.dataset.index = index;
+                    nodeBox.textContent = value;
+                    
+                    nodeElement.appendChild(nodeBox);
+                    
+                    // 如果不是最后一个节点，添加指针
+                    if (index < linkedList.length - 1) {
+                        const pointer = document.createElement('div');
+                        pointer.className = 'node-pointer';
+                        nodeElement.appendChild(pointer);
+                    }
+                    
+                    listContainer.appendChild(nodeElement);
+                });
+                
+                visualization.appendChild(listContainer);
+            }
+            
+            // 高亮节点
+            function highlightNode(index) {
+                setTimeout(() => {
+                    const nodes = document.querySelectorAll('.node-box');
+                    nodes.forEach(node => {
+                        node.classList.remove('highlight', 'new-node');
+                    });
+                    
+                    const node = document.querySelector(`.node-box[data-index="${index}"]`);
+                    if (node) {
+                        node.classList.add('highlight', 'new-node');
+                        node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }, 100);
+            }
+            
+            // 添加操作日志
+            function addLog(message) {
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `> ${message}`;
+                log.appendChild(logEntry);
+                log.scrollTop = log.scrollHeight;
+            }
+            
+            // 初始渲染
+            renderLinkedList();
+        });
+    </script>
+</body>
+</html> 

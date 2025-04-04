@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Close The Door - 确认反馈</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>确认反馈</h1>
+        </header>
+        
+        <main>
+            <div class="confirmation-section">
+                <div class="confirmation-message">
+                    <h2>门已关好！</h2>
+                    <div class="countdown-timer">
+                        <p>请等待 <span id="confirmation-countdown">10</span> 秒</p>
+                    </div>
+                </div>
+                
+                <div class="photo-section">
+                    <button id="take-photo" class="photo-button">拍照确认</button>
+                    <div id="photo-preview" class="photo-preview hidden">
+                        <h3>最近一次确认照片</h3>
+                        <img id="last-photo" src="" alt="最近一次确认照片">
+                        <p class="photo-note">(仅允许查看1次)</p>
+                    </div>
+                </div>
+                
+                <div class="audio-section">
+                    <button id="play-audio" class="audio-button">语音提示</button>
+                    <audio id="confirmation-audio" src="audio/confirmation.mp3"></audio>
+                </div>
+            </div>
+            
+            <div class="navigation-section">
+                <button id="back-home" class="back-button">返回首页</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2023 Close The Door</p>
+        </footer>
+    </div>
+    
+    <script src="js/confirm.js"></script>
+</body>
+</html> 

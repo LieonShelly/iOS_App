@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Close The Door - 数据统计</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>数据统计</h1>
+        </header>
+        
+        <main>
+            <div class="stats-container">
+                <div class="today-stats">
+                    <h2>今日确认次数</h2>
+                    <p class="confirm-count-large"><span id="today-confirm-count">0</span></p>
+                </div>
+                
+                <div class="challenge-status">
+                    <h2>今日挑战</h2>
+                    <div class="challenge-card">
+                        <p>仅确认1次挑战</p>
+                        <div class="challenge-status-indicator" id="challenge-status">
+                            <span class="status-text">进行中</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="weekly-stats">
+                    <h2>最近7天确认次数</h2>
+                    <div class="chart-container">
+                        <canvas id="weekly-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="progress-feedback">
+                    <h2>进步反馈</h2>
+                    <div class="feedback-card">
+                        <p id="progress-message">你比上周减少了 <span id="progress-percentage">30</span>% 的确认次数，继续加油！</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation-section">
+                <button id="back-home" class="back-button">返回首页</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2023 Close The Door</p>
+        </footer>
+    </div>
+    
+    <script src="js/stats.js"></script>
+</body>
+</html> 
