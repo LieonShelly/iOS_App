@@ -1,19 +1,20 @@
 //
-//  MetalRenderer.swift
-//  IMEditor
+//  CropRenderer.swift
+//  IMEditorApp
 //
-//  Created by Renjun Li on 2025/4/4.
+//  Created by Renjun Li on 2025/4/5.
 //
 
 import MetalKit
 
-class MetalRenderer: NSObject, MTKViewDelegate {
+class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     var device: MTLDevice!
     var commandQueue: MTLCommandQueue!
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
     var indexBuffer: MTLBuffer!
     var texture: MTLTexture?
+    let metalView: MTKView
     
     // 缩放和平移属性
     var scale: Float = 1.0
@@ -27,14 +28,15 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     // 是否显示裁剪后的图像
     var isCropped: Bool = false
     
-    init(mtkView: MTKView) {
-        super.init()
+    override init() {
         self.device = MTLCreateSystemDefaultDevice()
-        mtkView.device = device
-        mtkView.colorPixelFormat = .bgra8Unorm
-        mtkView.delegate = self
+        metalView = MTKView(frame: .zero, device: device)
+        metalView.device = device
+        metalView.colorPixelFormat = .bgra8Unorm
         commandQueue = device.makeCommandQueue()
-        setupPipeline(mtkView) // 2️⃣ 配置 Metal 渲染管线
+        super.init()
+        metalView.delegate = self
+        setupPipeline(metalView) // 2️⃣ 配置 Metal 渲染管线
         loadTexture()           // 3️⃣ 加载图片纹理
     }
     
@@ -202,8 +204,8 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         if let texture = texture {
             let imageSize = CGSize(width: texture.width, height: texture.height)
             // 使用上次保存的视图大小或默认值
-            let viewSize = displaySize != .zero ? 
-                          CGSize(width: displaySize.width * 2, height: displaySize.height * 2) : 
+            let viewSize = displaySize != .zero ?
+                          CGSize(width: displaySize.width * 2, height: displaySize.height * 2) :
                           CGSize(width: 2, height: 2) // 默认归一化坐标系
             setupVertices(for: imageSize, in: viewSize)
         }

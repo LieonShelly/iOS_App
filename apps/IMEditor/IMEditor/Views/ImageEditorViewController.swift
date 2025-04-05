@@ -158,7 +158,8 @@ class ImageEditorViewController: UIViewController {
             let deltaY = Float(-translation.y / cropBoxView.bounds.height) * 2.0 // 转换到 -1 到 1 的范围
             
             // 将平移偏移传递给渲染器
-            renderer.pan(deltaX: deltaX, deltaY: deltaY)
+            print("deltaX:\(deltaX) - deltaY:\(deltaY) ")
+//            renderer.pan(deltaX: deltaX, deltaY: deltaY)
             
             // 每次更新后重置平移手势的位移
             gesture.setTranslation(.zero, in: cropBoxView)
@@ -318,7 +319,7 @@ class CropBoxView: UIView {
         // 设置边框
         borderView.frame = bounds
         borderView.layer.borderWidth = 1.0
-        borderView.layer.borderColor = UIColor.white.cgColor
+        borderView.layer.borderColor = UIColor.red.cgColor
         borderView.backgroundColor = .clear
         addSubview(borderView)
         
@@ -353,7 +354,7 @@ class CropBoxView: UIView {
         let indicator = UIView(frame: CGRect(x: corner.bounds.width/2 - 10, y: corner.bounds.height/2 - 10, width: 20, height: 20))
         indicator.backgroundColor = .clear
         indicator.layer.borderWidth = 2
-        indicator.layer.borderColor = UIColor.white.cgColor
+        indicator.layer.borderColor = UIColor.red.cgColor
         indicator.layer.cornerRadius = 10
         corner.addSubview(indicator)
     }
@@ -367,14 +368,14 @@ class CropBoxView: UIView {
         for i in 1...2 {
             // 水平线
             let horizontalLine = UIView()
-            horizontalLine.backgroundColor = UIColor.white.withAlphaComponent(0.5)
+            horizontalLine.backgroundColor = UIColor.red.withAlphaComponent(0.5)
             horizontalLine.frame = CGRect(x: 0, y: bounds.height * CGFloat(i) / 3, width: bounds.width, height: 0.5)
             addSubview(horizontalLine)
             gridLines.append(horizontalLine)
             
             // 垂直线
             let verticalLine = UIView()
-            verticalLine.backgroundColor = UIColor.white.withAlphaComponent(0.5)
+            verticalLine.backgroundColor = UIColor.red.withAlphaComponent(0.5)
             verticalLine.frame = CGRect(x: bounds.width * CGFloat(i) / 3, y: 0, width: 0.5, height: bounds.height)
             addSubview(verticalLine)
             gridLines.append(verticalLine)
