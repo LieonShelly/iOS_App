@@ -17,7 +17,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     let metalView: MTKView
     
     // 缩放和平移属性
-    var scale: Float = 1.0
+    var scale: Float = 10.0
     var offsetX: Float = 0.0
     var offsetY: Float = 0.0
     

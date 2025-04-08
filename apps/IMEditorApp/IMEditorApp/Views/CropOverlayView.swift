@@ -4,13 +4,11 @@ struct CropOverlayView: View {
     @Binding var cropRect: CGRect
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
-
     @State private var initialRect: CGRect = .zero
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // MARK: 裁剪框边框
                 Rectangle()
                     .stroke(Color.yellow, lineWidth: 2)
                     .frame(width: cropRect.width, height: cropRect.height)
@@ -29,7 +27,6 @@ struct CropOverlayView: View {
                         initialRect = cropRect
                     }
 
-                // MARK: 上边
                 edgeHandle(position: CGPoint(x: cropRect.midX, y: cropRect.minY)) { value in
                     let newY = initialRect.origin.y + value.translation.height
                     let delta = initialRect.origin.y - newY
@@ -40,7 +37,6 @@ struct CropOverlayView: View {
                     }
                 }
 
-                // MARK: 下边
                 edgeHandle(position: CGPoint(x: cropRect.midX, y: cropRect.maxY)) { value in
                     let newHeight = initialRect.height + value.translation.height
                     if newHeight >= minSize {
@@ -48,7 +44,6 @@ struct CropOverlayView: View {
                     }
                 }
 
-                // MARK: 左边
                 edgeHandle(position: CGPoint(x: cropRect.minX, y: cropRect.midY), vertical: true) { value in
                     let newX = initialRect.origin.x + value.translation.width
                     let delta = initialRect.origin.x - newX
@@ -59,14 +54,13 @@ struct CropOverlayView: View {
                     }
                 }
 
-                // MARK: 右边
                 edgeHandle(position: CGPoint(x: cropRect.maxX, y: cropRect.midY), vertical: true) { value in
                     let newWidth = initialRect.width + value.translation.width
                     if newWidth >= minSize {
                         cropRect.size.width = newWidth
                     }
                 }
-                // MARK: 左上角
+
                 cornerHandle(position: cropRect.origin) { value in
                     let newX = initialRect.origin.x + value.translation.width
                     let newY = initialRect.origin.y + value.translation.height
@@ -85,7 +79,6 @@ struct CropOverlayView: View {
                     }
                 }
 
-                // MARK: 右上角
                 cornerHandle(position: CGPoint(x: cropRect.maxX, y: cropRect.minY)) { value in
                     let newY = initialRect.origin.y + value.translation.height
                     let deltaY = initialRect.origin.y - newY
@@ -101,7 +94,6 @@ struct CropOverlayView: View {
                     }
                 }
 
-                // MARK: 左下角
                 cornerHandle(position: CGPoint(x: cropRect.minX, y: cropRect.maxY)) { value in
                     let newX = initialRect.origin.x + value.translation.width
                     let deltaX = initialRect.origin.x - newX
@@ -117,7 +109,6 @@ struct CropOverlayView: View {
                     }
                 }
 
-                // MARK: 右下角
                 cornerHandle(position: CGPoint(x: cropRect.maxX, y: cropRect.maxY)) { value in
                     let newWidth = initialRect.width + value.translation.width
                     let newHeight = initialRect.height + value.translation.height
@@ -129,12 +120,30 @@ struct CropOverlayView: View {
                         cropRect.size.height = newHeight
                     }
                 }
+                
+                
+                Rectangle()
+                    .fill(Color.clear)
+                    .contentShape(Rectangle())
+                    .frame(width: cropRect.width - handleThickness, height: cropRect.height - handleThickness)
+                    .position(x: cropRect.midX, y: cropRect.midY)
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let newX = initialRect.origin.x + value.translation.width
+                                let newY = initialRect.origin.y + value.translation.height
+                                cropRect.origin = CGPoint(x: newX, y: newY)
+                            }
+                            .onEnded { _ in
+                                initialRect = cropRect
+                            }
+                    )
 
             }
         }
     }
 
-    /// 可复用的边缘拖动手柄
+    
     func edgeHandle(position: CGPoint, vertical: Bool = false, onDrag: @escaping (DragGesture.Value) -> Void) -> some View {
         Rectangle()
             .fill(Color.clear)
