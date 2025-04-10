@@ -15,6 +15,7 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                // 图像视图 (底层)
                 MetalImageView(renderer: renderer)
                     .onAppear(perform: {
                         renderer.updateCanvasSize(geometry.size.sizeInMetal)
@@ -24,8 +25,12 @@ struct ContentView: View {
                         cropRect = imageFrame
                     })
                 
-                CropOverlayView(cropRect: $cropRect)
-                    .position(x: cropRect.midX, y: cropRect.midY)
+                // 裁剪框层 (固定位置)
+                Color.clear
+                    .overlay(
+                        CropOverlayView(cropRect: $cropRect)
+                    )
+                    .allowsHitTesting(true)
                     .onChange(of: cropRect) { newRect in
                         // Ensure crop rect stays within image bounds
                         let boundedRect = CGRect(
@@ -39,6 +44,7 @@ struct ContentView: View {
                         }
                     }
                 
+                // 控制按钮 (顶层)
                 VStack {
                     Spacer()
                     HStack {
