@@ -127,16 +127,40 @@ class CropRender: MetalRenderer {
             return
         }
         
-        // 保存源纹理用于调试
-        saveTextureToFile(sourceTexture, filename: "source_texture.png")
+        // 考虑缩放和平移因素，重新计算真实的裁剪区域
+        let imageWidth = sourceTexture.width
+        let imageHeight = sourceTexture.height
+        
+        // 计算实际图像坐标系中的裁剪起点和尺寸
+        // 当图像放大和平移时，需要调整裁剪的起始位置
+        
+        // 从归一化坐标[-1,1]转换到图像像素坐标[0,imageWidth/imageHeight]
+        // 首先计算未经缩放和平移的归一化裁剪区域
+        let normalizedFromX = (Float(fromX) / Float(imageWidth)) * 2.0 - 1.0
+        let normalizedFromY = 1.0 - (Float(fromY) / Float(imageHeight)) * 2.0 // Y轴方向相反
+        
+        // 考虑缩放和平移的影响
+        // 当放大图像时，裁剪区域需要相应缩小
+        // 当平移图像时，裁剪起点需要相应偏移
+        let adjustedNormalizedFromX = (normalizedFromX - offsetX) / scale
+        let adjustedNormalizedFromY = (normalizedFromY - offsetY) / scale
+        
+        // 将归一化坐标转回图像像素坐标
+        let adjustedFromX = Int(((adjustedNormalizedFromX + 1.0) / 2.0) * Float(imageWidth))
+        let adjustedFromY = Int(((1.0 - adjustedNormalizedFromY) / 2.0) * Float(imageHeight))
+        
+        // 同样调整裁剪宽度和高度
+        let adjustedWidth = Int(Float(width) / scale)
+        let adjustedHeight = Int(Float(height) / scale)
         
         // 确保裁剪区域在有效范围内
-        let validFromX = max(0, min(fromX, sourceTexture.width - 1))
-        let validFromY = max(0, min(fromY, sourceTexture.height - 1))
-        let validWidth = min(width, sourceTexture.width - validFromX)
-        let validHeight = min(height, sourceTexture.height - validFromY)
+        let validFromX = max(0, min(adjustedFromX, sourceTexture.width - 1))
+        let validFromY = max(0, min(adjustedFromY, sourceTexture.height - 1))
+        let validWidth = min(adjustedWidth, sourceTexture.width - validFromX)
+        let validHeight = min(adjustedHeight, sourceTexture.height - validFromY)
         
-        print("Crop region: x=\(validFromX), y=\(validFromY), width=\(validWidth), height=\(validHeight)")
+        print("Original crop region: x=\(fromX), y=\(fromY), width=\(width), height=\(height)")
+        print("Adjusted crop region: x=\(validFromX), y=\(validFromY), width=\(validWidth), height=\(validHeight)")
         
         // 创建目标纹理描述符
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -196,6 +220,8 @@ class CropRender: MetalRenderer {
                 self?.texture = nil
                 self?.texture = croppedTexture
                 self?.imageSize = CGSize(width: validWidth, height: validHeight)
+                // 重置变换
+                self?.resetTransform()
                 self?.isCropped = true
                 completion(true)
             }

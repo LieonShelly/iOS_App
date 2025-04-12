@@ -225,8 +225,6 @@ struct CropOverlayView: View {
         Rectangle()
             .fill(Color.clear)
             .contentShape(Rectangle())
-            .frame(width: max(0, rightEdge - leftEdge - handleThickness), 
-                   height: max(0, bottomEdge - topEdge - handleThickness))
             .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
             .gesture(
                 SimultaneousGesture(
@@ -287,6 +285,8 @@ struct CropOverlayView: View {
             }
             .compositingGroup() // 确保混合模式正确应用
             
+            centerArea()
+            
             // 裁剪框边界线
             cropArea()
                 
@@ -305,8 +305,7 @@ struct CropOverlayView: View {
             bottomLeftCornor()
             
             bottomRightCornor()
-            
-            centerArea()
+
         }
         .onAppear {
             initializeEdges()
