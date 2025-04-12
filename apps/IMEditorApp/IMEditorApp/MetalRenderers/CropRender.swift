@@ -6,14 +6,14 @@
 //
 import MetalKit
 import Foundation
-
+import CoreImage
+import ImageIO
+import UniformTypeIdentifiers
 
 class CropRender: MetalRenderer {
     var scale: Float = 1
     var offsetX: Float = 0.0
     var offsetY: Float = 0.0
-
-    private var displaySize: CGSize = .zero
     var isCropped: Bool = false
     
 
@@ -97,21 +97,62 @@ class CropRender: MetalRenderer {
         scale = 1.0
         offsetX = 0.0
         offsetY = 0.0
-        updateVertices()
     }
     
     // 更新顶点缓冲区
-    private func updateVertices() {
-        if let texture = texture {
-            let imageSize = CGSize(width: texture.width, height: texture.height)
-            // 使用上次保存的视图大小或默认值
-            let viewSize = displaySize != .zero ?
-                          CGSize(width: displaySize.width * 2, height: displaySize.height * 2) :
-                          CGSize(width: 2, height: 2) // 默认归一化坐标系
-            setupVertices(for: imageSize, in: viewSize)
+    private func updateVertices() { }
+
+    // 保存纹理为图片文件（用于调试）
+    func saveTextureToFile(_ texture: MTLTexture, filename: String) {
+        let width = texture.width
+        let height = texture.height
+        let bytesPerRow = width * 4 // 假设是RGBA格式
+        
+        // 创建缓冲区来存储纹理数据
+        let data = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
+        defer { data.deallocate() }
+        
+        // 从纹理读取数据
+        texture.getBytes(
+            data,
+            bytesPerRow: bytesPerRow,
+            from: MTLRegionMake2D(0, 0, width, height),
+            mipmapLevel: 0
+        )
+        
+        // 创建CGImage
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+        
+        guard let context = CGContext(
+            data: data,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo.rawValue
+        ) else {
+            print("Failed to create CGContext")
+            return
+        }
+        
+        guard let cgImage = context.makeImage() else {
+            print("Failed to create CGImage")
+            return
+        }
+        
+        // 保存为PNG文件
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        if let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) {
+            CGImageDestinationAddImage(destination, cgImage, nil)
+            if CGImageDestinationFinalize(destination) {
+                print("Image saved to: \(url.path)")
+            } else {
+                print("Failed to save image")
+            }
         }
     }
-
 
     // 裁剪图像
     func cropImage(fromX: Int, fromY: Int, width: Int, height: Int, completion: @escaping (Bool) -> Void) {
@@ -120,11 +161,16 @@ class CropRender: MetalRenderer {
             return
         }
         
+        // 保存源纹理用于调试
+        saveTextureToFile(sourceTexture, filename: "source_texture.png")
+        
         // 确保裁剪区域在有效范围内
         let validFromX = max(0, min(fromX, sourceTexture.width - 1))
         let validFromY = max(0, min(fromY, sourceTexture.height - 1))
         let validWidth = min(width, sourceTexture.width - validFromX)
         let validHeight = min(height, sourceTexture.height - validFromY)
+        
+        print("Crop region: x=\(validFromX), y=\(validFromY), width=\(validWidth), height=\(validHeight)")
         
         // 创建目标纹理描述符
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -134,6 +180,7 @@ class CropRender: MetalRenderer {
             mipmapped: false
         )
         textureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+        textureDescriptor.storageMode = .shared
         
         guard let croppedTexture = device.makeTexture(descriptor: textureDescriptor) else {
             completion(false)
@@ -176,9 +223,13 @@ class CropRender: MetalRenderer {
         // 完成命令缓冲区并设置完成回调
         commandBuffer.addCompletedHandler { [weak self] _ in
             DispatchQueue.main.async {
+                // 保存裁剪后的纹理用于调试
+                self?.saveTextureToFile(croppedTexture, filename: "cropped_texture.png")
+                
+                // 确保在设置新纹理之前清除旧纹理
+                self?.texture = nil
                 self?.texture = croppedTexture
                 self?.imageSize = CGSize(width: validWidth, height: validHeight)
-                self?.resetTransform()
                 self?.isCropped = true
                 completion(true)
             }
@@ -186,5 +237,8 @@ class CropRender: MetalRenderer {
         
         // 提交命令缓冲区
         commandBuffer.commit()
+        
+        // 等待命令缓冲区完成
+        commandBuffer.waitUntilCompleted()
     }
 }

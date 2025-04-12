@@ -192,3 +192,9 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
 //         }
     }
 }
+
+extension CGRect {
+    var rectInScreen: CGRect {
+        CGRect(x: minX / UIScreen.main.nativeScale, y: minY / UIScreen.main.nativeScale, width: width / UIScreen.main.nativeScale, height: height / UIScreen.main.nativeScale)
+    }
+}

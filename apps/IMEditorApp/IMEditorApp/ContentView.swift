@@ -62,8 +62,8 @@ struct ContentView: View {
                             
                             renderer.cropImage(fromX: imageX, fromY: imageY, width: imageWidth, height: imageHeight) { success in
                                 if success {
-                                    // Reset crop rect to new image frame
-                                    imageFrame = renderer.getImageFrame(in: UIScreen.main.bounds.size)
+                                    renderer.display(in: CGSize(width: geometry.size.width - 20, height: geometry.size.width - 20).sizeInMetal)
+                                    imageFrame = renderer.getImageFrame(in: geometry.size)
                                     cropRect = imageFrame
                                 }
                             }
@@ -87,5 +87,9 @@ struct ContentView: View {
 extension CGSize {
     var sizeInMetal: CGSize {
         CGSize(width: width * UIScreen.main.nativeScale, height: height * UIScreen.main.nativeScale)
+    }
+    
+    var sizeInScreen: CGSize {
+        CGSize(width: width / UIScreen.main.nativeScale, height: height / UIScreen.main.nativeScale)
     }
 }

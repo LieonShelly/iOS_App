@@ -284,7 +284,7 @@ struct CropOverlayView: View {
             initializeEdges()
         }
         .onChange(of: cropRect) { newRect in
-            if !initialized, newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
+            if  newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
                 initializeEdges()
                 initialized = true
             }
