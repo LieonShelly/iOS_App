@@ -7,6 +7,9 @@
 
 import MetalKit
 import Foundation
+import CoreImage
+import ImageIO
+import UniformTypeIdentifiers
 
 class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     var device: MTLDevice!
@@ -19,6 +22,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     var currentVertices: [CGPoint] = []
     var canvasSize: CGSize = .zero
     var imageSize: CGSize = .zero
+    var displaySize: CGSize = .zero
     
     override init() {
         self.device = MTLCreateSystemDefaultDevice()
@@ -94,6 +98,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     func display(in viewSize: CGSize) {
         guard let texture else { return }
         let imageSize = CGSize(width: texture.width, height: texture.height)
+        self.displaySize = viewSize
         setupVertices(for: imageSize, in: viewSize)
     }
     
@@ -191,10 +196,68 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
 //             setupVertices(for: imageSize, in: size)
 //         }
     }
+    
+    
+
+    // 保存纹理为图片文件（用于调试）
+    func saveTextureToFile(_ texture: MTLTexture, filename: String) {
+        let width = texture.width
+        let height = texture.height
+        let bytesPerRow = width * 4 // 假设是RGBA格式
+        
+        // 创建缓冲区来存储纹理数据
+        let data = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
+        defer { data.deallocate() }
+        
+        // 从纹理读取数据
+        texture.getBytes(
+            data,
+            bytesPerRow: bytesPerRow,
+            from: MTLRegionMake2D(0, 0, width, height),
+            mipmapLevel: 0
+        )
+        
+        // 创建CGImage
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+        
+        guard let context = CGContext(
+            data: data,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo.rawValue
+        ) else {
+            print("Failed to create CGContext")
+            return
+        }
+        
+        guard let cgImage = context.makeImage() else {
+            print("Failed to create CGImage")
+            return
+        }
+        
+        // 保存为PNG文件
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        if let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) {
+            CGImageDestinationAddImage(destination, cgImage, nil)
+            if CGImageDestinationFinalize(destination) {
+                print("Image saved to: \(url.path)")
+            } else {
+                print("Failed to save image")
+            }
+        }
+    }
 }
 
 extension CGRect {
     var rectInScreen: CGRect {
         CGRect(x: minX / UIScreen.main.nativeScale, y: minY / UIScreen.main.nativeScale, width: width / UIScreen.main.nativeScale, height: height / UIScreen.main.nativeScale)
+    }
+    
+    var rectInMetal: CGRect {
+        CGRect(x: minX * UIScreen.main.nativeScale, y: minY * UIScreen.main.nativeScale, width: width * UIScreen.main.nativeScale, height: height * UIScreen.main.nativeScale)
     }
 }

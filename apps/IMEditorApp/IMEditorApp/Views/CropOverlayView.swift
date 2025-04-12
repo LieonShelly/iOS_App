@@ -2,6 +2,9 @@ import SwiftUI
 
 struct CropOverlayView: View {
     @Binding var cropRect: CGRect
+    @Binding var scale: CGFloat
+    @Binding var translation: CGSize
+    
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
     @State private var initialRect: CGRect = .zero
@@ -226,20 +229,36 @@ struct CropOverlayView: View {
                    height: max(0, bottomEdge - topEdge - handleThickness))
             .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
             .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        let deltaX = value.translation.width
-                        let deltaY = value.translation.height
-                        leftEdge = initialRect.minX + deltaX
-                        rightEdge = initialRect.maxX + deltaX
-                        topEdge = initialRect.minY + deltaY
-                        bottomEdge = initialRect.maxY + deltaY
-                        // 更新cropRect以保持同步
-                        updateCropRect()
-                    }
-                    .onEnded { _ in
-                        saveInitialRect()
-                    }
+                SimultaneousGesture(
+                    // 拖动手势 - 用于平移图像
+                    DragGesture()
+                        .onChanged { value in
+                            // 更新平移量 - 注意这里是相反方向，因为我们要移动图像而非裁剪框
+                            // 乘以系数放大平移效果
+                            let sensitivity: CGFloat = 2.0 // 放大平移效果
+                            self.translation = CGSize(
+                                width: value.translation.width * sensitivity,
+                                height: -value.translation.height * sensitivity
+                            )
+                        }
+                        .onEnded { _ in
+                            // 结束时重置平移量，使下次拖动从0开始计算
+                            self.translation = .zero
+                            saveInitialRect()
+                        },
+                    // 缩放手势
+                    MagnificationGesture()
+                        .onChanged { scale in
+                            // 调整缩放灵敏度
+                            let adjustedScale = 1.0 + (scale - 1.0) * 0.5 // 降低缩放速度
+                            self.scale = adjustedScale
+                        }
+                        .onEnded { _ in
+                            // 结束时重置缩放比例，使下次缩放从1开始计算
+                            self.scale = 1.0
+                            saveInitialRect()
+                        }
+                )
             )
     }
     
@@ -254,12 +273,21 @@ struct CropOverlayView: View {
     var body: some View {
         // 使用ZStack包裹所有子视图，并使其完全填充父视图
         ZStack {
-            // 透明背景占满整个区域，但不参与事件处理
-            Color.clear
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .allowsHitTesting(false)
+            // 遮罩层
+            ZStack {
+                // 半透明蒙版背景
+                Color.black.opacity(0.3)
+                
+                // 裁剪框区域 - 使用清除遮罩创建透明区域
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(width: rightEdge - leftEdge, height: bottomEdge - topEdge)
+                    .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
+                    .blendMode(.destinationOut)
+            }
+            .compositingGroup() // 确保混合模式正确应用
             
+            // 裁剪框边界线
             cropArea()
                 
             topline()
@@ -284,13 +312,12 @@ struct CropOverlayView: View {
             initializeEdges()
         }
         .onChange(of: cropRect) { newRect in
-            if  newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
+            if !initialized, newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
                 initializeEdges()
                 initialized = true
             }
         }
     }
-    
     
     private func initializeEdges() {
         leftEdge = cropRect.minX

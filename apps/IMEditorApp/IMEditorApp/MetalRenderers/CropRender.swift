@@ -11,7 +11,7 @@ import ImageIO
 import UniformTypeIdentifiers
 
 class CropRender: MetalRenderer {
-    var scale: Float = 1
+    var scale: Float = 1.0
     var offsetX: Float = 0.0
     var offsetY: Float = 0.0
     var isCropped: Bool = false
@@ -70,7 +70,7 @@ class CropRender: MetalRenderer {
     func zoom(factor: Float) {
         let newScale = scale * factor
         // 限制缩放范围
-        if newScale >= 1.0 && newScale <= 5.0 {
+        if newScale >= 0.1 && newScale <= 5.0 {
             scale = newScale
             updateVertices()
         }
@@ -78,17 +78,24 @@ class CropRender: MetalRenderer {
     
     // 平移图像
     func pan(deltaX: Float, deltaY: Float) {
-        // 计算最大偏移量，确保不会将图像移出视图太多
-        let maxOffsetX = scale - 1.0
-        let maxOffsetY = scale - 1.0
+        // 增加平移偏移量，根据缩放因子调整灵敏度
+        // 缩放越大，移动越慢，提供更精细的控制
+        let sensitivityFactor = 1.0 / scale
         
-        offsetX += deltaX
-        offsetY += deltaY
+        let adjustedDeltaX = deltaX * sensitivityFactor
+        let adjustedDeltaY = deltaY * sensitivityFactor
         
-        // 限制偏移范围
-        offsetX = max(-maxOffsetX, min(maxOffsetX, offsetX))
-        offsetY = max(-maxOffsetY, min(maxOffsetY, offsetY))
+        offsetX += adjustedDeltaX
+        offsetY += adjustedDeltaY
         
+        // 计算最大偏移范围 - 缩放比例越大，可移动范围越大
+        let maxOffset = max(0.5, scale - 1.0) * 2.0
+        
+        // 限制偏移范围，防止图像移出视图太远
+        offsetX = max(-maxOffset, min(maxOffset, offsetX))
+        offsetY = max(-maxOffset, min(maxOffset, offsetY))
+        
+        // 更新顶点
         updateVertices()
     }
     
@@ -100,58 +107,17 @@ class CropRender: MetalRenderer {
     }
     
     // 更新顶点缓冲区
-    private func updateVertices() { }
-
-    // 保存纹理为图片文件（用于调试）
-    func saveTextureToFile(_ texture: MTLTexture, filename: String) {
-        let width = texture.width
-        let height = texture.height
-        let bytesPerRow = width * 4 // 假设是RGBA格式
+    private func updateVertices() {
+        guard let texture = texture else { return }
+        let imageSize = CGSize(width: texture.width, height: texture.height)
         
-        // 创建缓冲区来存储纹理数据
-        let data = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
-        defer { data.deallocate() }
+        // 使用当前显示尺寸或合理的默认值
+        let viewSize = displaySize != .zero ? 
+            displaySize : 
+            CGSize(width: canvasSize.width * 2, height: canvasSize.height * 2)
         
-        // 从纹理读取数据
-        texture.getBytes(
-            data,
-            bytesPerRow: bytesPerRow,
-            from: MTLRegionMake2D(0, 0, width, height),
-            mipmapLevel: 0
-        )
-        
-        // 创建CGImage
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
-        
-        guard let context = CGContext(
-            data: data,
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo.rawValue
-        ) else {
-            print("Failed to create CGContext")
-            return
-        }
-        
-        guard let cgImage = context.makeImage() else {
-            print("Failed to create CGImage")
-            return
-        }
-        
-        // 保存为PNG文件
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        if let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) {
-            CGImageDestinationAddImage(destination, cgImage, nil)
-            if CGImageDestinationFinalize(destination) {
-                print("Image saved to: \(url.path)")
-            } else {
-                print("Failed to save image")
-            }
-        }
+        // 重新计算顶点
+        setupVertices(for: imageSize, in: viewSize)
     }
 
     // 裁剪图像
@@ -241,4 +207,45 @@ class CropRender: MetalRenderer {
         // 等待命令缓冲区完成
         commandBuffer.waitUntilCompleted()
     }
+
+    // 根据裁剪框位置更新图像位置
+    func updateImagePosition(for cropRect: CGRect, in viewSize: CGSize) {
+        guard let texture = texture else { return }
+        
+        // 获取图像在视图中的显示尺寸
+        let imageSize = CGSize(width: texture.width, height: texture.height)
+        let imageAspect = imageSize.width / imageSize.height
+        let viewAspect = viewSize.width / viewSize.height
+        
+        // 计算图像在视图中的实际显示尺寸
+        var displayWidth: CGFloat = viewSize.width
+        var displayHeight: CGFloat = viewSize.height
+        
+        if imageAspect > viewAspect {
+            displayHeight = viewSize.width / imageAspect
+        } else {
+            displayWidth = viewSize.height * imageAspect
+        }
+        
+        // 计算图像在视图中的实际位置（居中显示）
+        let imageX = (viewSize.width - displayWidth) / 2
+        let imageY = (viewSize.height - displayHeight) / 2
+        
+        // 计算裁剪框在图像坐标系中的位置（相对于图像左上角）
+        let cropInImageX = (cropRect.minX - imageX) / displayWidth
+        let cropInImageY = (cropRect.minY - imageY) / displayHeight
+        
+        // 计算裁剪框中心在图像坐标系中的位置（归一化到[0,1]范围）
+        let cropCenterInImageX = cropInImageX + (cropRect.width / displayWidth) / 2
+        let cropCenterInImageY = cropInImageY + (cropRect.height / displayHeight) / 2
+        
+        // 计算需要移动的距离，使裁剪框内容居中
+        // 由于裁剪框中心应该在视图中心(0,0)，所以需要移动的距离就是裁剪框中心的负值
+        offsetX = -Float(cropCenterInImageX * 2 - 1)
+        offsetY = -Float(cropCenterInImageY * 2 - 1)
+        
+        // 更新顶点
+        setupVertices(for: imageSize, in: viewSize)
+    }
+
 }
