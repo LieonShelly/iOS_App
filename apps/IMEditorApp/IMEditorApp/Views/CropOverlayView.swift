@@ -11,6 +11,246 @@ struct CropOverlayView: View {
     @State private var rightEdge: CGFloat = .zero
     @State private var initialized: Bool = false
     
+    fileprivate func topline() -> some View {
+        // 顶部边缘手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: rightEdge - leftEdge, height: handleThickness)
+            .position(x: (leftEdge + rightEdge) / 2, y: topEdge)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newTop = initialRect.minY + value.translation.height
+                        if bottomEdge - newTop >= minSize {
+                            topEdge = newTop
+                            updateCropRect()
+                        }
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func bottomLine() -> some View {
+        // 底部边缘手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: rightEdge - leftEdge, height: handleThickness)
+            .position(x: (leftEdge + rightEdge) / 2, y: bottomEdge)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newBottom = initialRect.maxY + value.translation.height
+                        // 确保不超过顶部边缘加上最小尺寸
+                        if newBottom - topEdge >= minSize {
+                            bottomEdge = newBottom
+                            // 更新cropRect以保持同步
+                            updateCropRect()
+                        }
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func leftLine() -> some View {
+        // 左侧边缘手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: handleThickness, height: bottomEdge - topEdge)
+            .position(x: leftEdge, y: (topEdge + bottomEdge) / 2)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newLeft = initialRect.minX + value.translation.width
+                        // 确保不超过右侧边缘减去最小尺寸
+                        if rightEdge - newLeft >= minSize {
+                            leftEdge = newLeft
+                            // 更新cropRect以保持同步
+                            updateCropRect()
+                        }
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func rightLine() -> some View {
+        // 右侧边缘手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: handleThickness, height: bottomEdge - topEdge)
+            .position(x: rightEdge, y: (topEdge + bottomEdge) / 2)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newRight = initialRect.maxX + value.translation.width
+                        // 确保不超过左侧边缘加上最小尺寸
+                        if newRight - leftEdge >= minSize {
+                            rightEdge = newRight
+                            // 更新cropRect以保持同步
+                            updateCropRect()
+                        }
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func topLeftCornor() -> some View {
+        // 左上角手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: handleThickness, height: handleThickness)
+            .position(x: leftEdge, y: topEdge)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newLeft = initialRect.minX + value.translation.width
+                        let newTop = initialRect.minY + value.translation.height
+                        // 确保不超过最小尺寸
+                        if rightEdge - newLeft >= minSize {
+                            leftEdge = newLeft
+                        }
+                        if bottomEdge - newTop >= minSize {
+                            topEdge = newTop
+                        }
+                        // 更新cropRect以保持同步
+                        updateCropRect()
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func topRightCornor() -> some View {
+        // 右上角手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: handleThickness, height: handleThickness)
+            .position(x: rightEdge, y: topEdge)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newRight = initialRect.maxX + value.translation.width
+                        let newTop = initialRect.minY + value.translation.height
+                        // 确保不超过最小尺寸
+                        if newRight - leftEdge >= minSize {
+                            rightEdge = newRight
+                        }
+                        if bottomEdge - newTop >= minSize {
+                            topEdge = newTop
+                        }
+                        // 更新cropRect以保持同步
+                        updateCropRect()
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func bottomLeftCornor() -> some View {
+         // 左下角手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: handleThickness, height: handleThickness)
+            .position(x: leftEdge, y: bottomEdge)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newLeft = initialRect.minX + value.translation.width
+                        let newBottom = initialRect.maxY + value.translation.height
+                        // 确保不超过最小尺寸
+                        if rightEdge - newLeft >= minSize {
+                            leftEdge = newLeft
+                        }
+                        if newBottom - topEdge >= minSize {
+                            bottomEdge = newBottom
+                        }
+                        // 更新cropRect以保持同步
+                        updateCropRect()
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func bottomRightCornor() -> some View {
+        // 右下角手柄
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: handleThickness, height: handleThickness)
+            .position(x: rightEdge, y: bottomEdge)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newRight = initialRect.maxX + value.translation.width
+                        let newBottom = initialRect.maxY + value.translation.height
+                        // 确保不超过最小尺寸
+                        if newRight - leftEdge >= minSize {
+                            rightEdge = newRight
+                        }
+                        if newBottom - topEdge >= minSize {
+                            bottomEdge = newBottom
+                        }
+                        // 更新cropRect以保持同步
+                        updateCropRect()
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func centerArea() -> some View {
+        // 中心拖动区域
+        Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .frame(width: max(0, rightEdge - leftEdge - handleThickness), 
+                   height: max(0, bottomEdge - topEdge - handleThickness))
+            .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let deltaX = value.translation.width
+                        let deltaY = value.translation.height
+                        leftEdge = initialRect.minX + deltaX
+                        rightEdge = initialRect.maxX + deltaX
+                        topEdge = initialRect.minY + deltaY
+                        bottomEdge = initialRect.maxY + deltaY
+                        // 更新cropRect以保持同步
+                        updateCropRect()
+                    }
+                    .onEnded { _ in
+                        saveInitialRect()
+                    }
+            )
+    }
+    
+    fileprivate func cropArea() -> some View {
+         // 黄色边框
+        Rectangle()
+            .stroke(Color.yellow, lineWidth: 2)
+            .frame(width: rightEdge - leftEdge, height: bottomEdge - topEdge)
+            .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
+    }
+    
     var body: some View {
         // 使用ZStack包裹所有子视图，并使其完全填充父视图
         ZStack {
@@ -20,234 +260,30 @@ struct CropOverlayView: View {
                 .contentShape(Rectangle())
                 .allowsHitTesting(false)
             
-            // 黄色边框
-            Rectangle()
-                .stroke(Color.yellow, lineWidth: 2)
-                .frame(width: rightEdge - leftEdge, height: bottomEdge - topEdge)
-                .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
+            cropArea()
                 
-            // 顶部边缘手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: rightEdge - leftEdge, height: handleThickness)
-                .position(x: (leftEdge + rightEdge) / 2, y: topEdge)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newTop = initialRect.minY + value.translation.height
-                            // 确保不超过底部边缘减去最小尺寸
-                            if bottomEdge - newTop >= minSize {
-                                topEdge = newTop
-                                // 更新cropRect以保持同步
-                                updateCropRect()
-                            }
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            topline()
             
-            // 底部边缘手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: rightEdge - leftEdge, height: handleThickness)
-                .position(x: (leftEdge + rightEdge) / 2, y: bottomEdge)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newBottom = initialRect.maxY + value.translation.height
-                            // 确保不超过顶部边缘加上最小尺寸
-                            if newBottom - topEdge >= minSize {
-                                bottomEdge = newBottom
-                                // 更新cropRect以保持同步
-                                updateCropRect()
-                            }
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            bottomLine()
             
-            // 左侧边缘手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: handleThickness, height: bottomEdge - topEdge)
-                .position(x: leftEdge, y: (topEdge + bottomEdge) / 2)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newLeft = initialRect.minX + value.translation.width
-                            // 确保不超过右侧边缘减去最小尺寸
-                            if rightEdge - newLeft >= minSize {
-                                leftEdge = newLeft
-                                // 更新cropRect以保持同步
-                                updateCropRect()
-                            }
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            leftLine()
             
-            // 右侧边缘手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: handleThickness, height: bottomEdge - topEdge)
-                .position(x: rightEdge, y: (topEdge + bottomEdge) / 2)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newRight = initialRect.maxX + value.translation.width
-                            // 确保不超过左侧边缘加上最小尺寸
-                            if newRight - leftEdge >= minSize {
-                                rightEdge = newRight
-                                // 更新cropRect以保持同步
-                                updateCropRect()
-                            }
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            rightLine()
             
-            // 左上角手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: handleThickness, height: handleThickness)
-                .position(x: leftEdge, y: topEdge)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newLeft = initialRect.minX + value.translation.width
-                            let newTop = initialRect.minY + value.translation.height
-                            // 确保不超过最小尺寸
-                            if rightEdge - newLeft >= minSize {
-                                leftEdge = newLeft
-                            }
-                            if bottomEdge - newTop >= minSize {
-                                topEdge = newTop
-                            }
-                            // 更新cropRect以保持同步
-                            updateCropRect()
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            topLeftCornor()
             
-            // 右上角手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: handleThickness, height: handleThickness)
-                .position(x: rightEdge, y: topEdge)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newRight = initialRect.maxX + value.translation.width
-                            let newTop = initialRect.minY + value.translation.height
-                            // 确保不超过最小尺寸
-                            if newRight - leftEdge >= minSize {
-                                rightEdge = newRight
-                            }
-                            if bottomEdge - newTop >= minSize {
-                                topEdge = newTop
-                            }
-                            // 更新cropRect以保持同步
-                            updateCropRect()
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            topRightCornor()
             
-            // 左下角手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: handleThickness, height: handleThickness)
-                .position(x: leftEdge, y: bottomEdge)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newLeft = initialRect.minX + value.translation.width
-                            let newBottom = initialRect.maxY + value.translation.height
-                            // 确保不超过最小尺寸
-                            if rightEdge - newLeft >= minSize {
-                                leftEdge = newLeft
-                            }
-                            if newBottom - topEdge >= minSize {
-                                bottomEdge = newBottom
-                            }
-                            // 更新cropRect以保持同步
-                            updateCropRect()
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            bottomLeftCornor()
             
-            // 右下角手柄
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: handleThickness, height: handleThickness)
-                .position(x: rightEdge, y: bottomEdge)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let newRight = initialRect.maxX + value.translation.width
-                            let newBottom = initialRect.maxY + value.translation.height
-                            // 确保不超过最小尺寸
-                            if newRight - leftEdge >= minSize {
-                                rightEdge = newRight
-                            }
-                            if newBottom - topEdge >= minSize {
-                                bottomEdge = newBottom
-                            }
-                            // 更新cropRect以保持同步
-                            updateCropRect()
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            bottomRightCornor()
             
-            // 中心拖动区域
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(width: max(0, rightEdge - leftEdge - handleThickness), 
-                       height: max(0, bottomEdge - topEdge - handleThickness))
-                .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let deltaX = value.translation.width
-                            let deltaY = value.translation.height
-                            leftEdge = initialRect.minX + deltaX
-                            rightEdge = initialRect.maxX + deltaX
-                            topEdge = initialRect.minY + deltaY
-                            bottomEdge = initialRect.maxY + deltaY
-                            // 更新cropRect以保持同步
-                            updateCropRect()
-                        }
-                        .onEnded { _ in
-                            saveInitialRect()
-                        }
-                )
+            centerArea()
         }
         .onAppear {
-            // 在视图出现时初始化边缘位置
             initializeEdges()
         }
         .onChange(of: cropRect) { newRect in
-            // 当外部更新cropRect时，也更新我们的边缘位置
             if !initialized, newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
                 initializeEdges()
                 initialized = true
@@ -255,7 +291,7 @@ struct CropOverlayView: View {
         }
     }
     
-    // 初始化四个边的位置
+    
     private func initializeEdges() {
         leftEdge = cropRect.minX
         rightEdge = cropRect.maxX
@@ -264,12 +300,10 @@ struct CropOverlayView: View {
         saveInitialRect()
     }
     
-    // 保存当前的初始矩形，用于计算拖动的相对位置
     private func saveInitialRect() {
         initialRect = CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge)
     }
     
-    // 更新cropRect以匹配当前的边缘位置
     private func updateCropRect() {
         cropRect = CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge)
     }
