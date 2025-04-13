@@ -3,7 +3,8 @@ import SwiftUI
 struct CropOverlayView: View {
     @Binding var cropRect: CGRect
     @Binding var scale: CGFloat
-    @Binding var translation: CGSize
+    @Binding var translation: CGPoint
+    
     
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
@@ -13,6 +14,7 @@ struct CropOverlayView: View {
     @State private var leftEdge: CGFloat = .zero
     @State private var rightEdge: CGFloat = .zero
     @State private var initialized: Bool = false
+    @State private var translationInMove: CGPoint = .zero
     
     fileprivate func topline() -> some View {
         // 顶部边缘手柄
@@ -220,6 +222,8 @@ struct CropOverlayView: View {
             )
     }
     
+    @State private var lastDragLocation: CGPoint?
+    
     fileprivate func centerArea() -> some View {
         // 中心拖动区域
         Rectangle()
@@ -228,21 +232,16 @@ struct CropOverlayView: View {
             .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
             .gesture(
                 SimultaneousGesture(
-                    // 拖动手势 - 用于平移图像
                     DragGesture()
                         .onChanged { value in
-                            // 更新平移量 - 注意这里是相反方向，因为我们要移动图像而非裁剪框
-                            // 乘以系数放大平移效果
-                            let sensitivity: CGFloat = 2.0 // 放大平移效果
-                            self.translation = CGSize(
-                                width: value.translation.width * sensitivity,
-                                height: -value.translation.height * sensitivity
-                            )
+                            if let last = lastDragLocation {
+                                let delta = CGPoint(x: value.location.x - last.x, y: value.location.y - last.y)
+                                self.translation = delta
+                            }
+                            lastDragLocation = value.location
                         }
-                        .onEnded { _ in
-                            // 结束时重置平移量，使下次拖动从0开始计算
-                            self.translation = .zero
-                            saveInitialRect()
+                        .onEnded { value in
+                            lastDragLocation = nil
                         },
                     // 缩放手势
                     MagnificationGesture()

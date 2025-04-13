@@ -6,12 +6,13 @@
 //
 
 import SwiftUI
+import simd
 
 struct ContentView: View {
     @StateObject var renderer = CropRender()
     @State private var cropRect: CGRect = .zero
     @State private var scale: CGFloat = .zero
-    @State private var translation: CGSize = .zero
+    @State private var translation: CGPoint = .zero
     @State private var imageFrame: CGRect = .zero
     @State private var debounceItem: DispatchWorkItem?
     @State private var deltaX: Float = 0
@@ -34,12 +35,10 @@ struct ContentView: View {
                         renderer.zoom(factor: scaleFactor)
                     }
                     .onChange(of: translation) { newValue in
-                        // 将屏幕坐标系的平移量转换为归一化坐标系
-                        // 添加缩放因子以调整平移灵敏度
-                        let sensitivity: Float = 0.5 // 降低灵敏度
-                        let normalizedDeltaX = Float(newValue.width / geometry.size.width) * sensitivity
-                        let normalizedDeltaY = Float(newValue.height / geometry.size.height) * sensitivity
-                        renderer.pan(deltaX: normalizedDeltaX, deltaY: normalizedDeltaY)
+                        let martrix = Martrix.screenToMetalDeltaMartrix(geometry.size)
+                        let offset = martrix * SIMD3<Float>(Float(newValue.x), Float(newValue.y), 1)
+                        print(offset)
+                        renderer.pan(deltaX: offset.x, deltaY: offset.y)
                     }
                 
                 // 裁剪框层 (固定位置)
@@ -101,6 +100,20 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            let screenSize: CGSize = CGSize(width: 100, height: 100)
+            let martrix = Martrix.screenToMetalMartrix(screenSize)
+            
+            print(martrix * SIMD3<Float>(0, 0, 1))
+            print(martrix * SIMD3<Float>(50, 50, 1))
+            print(martrix * SIMD3<Float>(100, 100,1))
+            print(martrix * SIMD3<Float>(100, 0,1))
+            print(martrix *  SIMD3<Float>(0, 100,1))
+            print("=========")
+            print(martrix.inverse *  SIMD3<Float>(0, 0,1))
+            print(martrix.inverse *  SIMD3<Float>(1, -1,1))
+            print(martrix.inverse *  SIMD3<Float>(-1, 1,1))
         }
     }
 }

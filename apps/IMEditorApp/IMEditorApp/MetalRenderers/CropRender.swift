@@ -9,6 +9,7 @@ import Foundation
 import CoreImage
 import ImageIO
 import UniformTypeIdentifiers
+import simd
 
 class CropRender: MetalRenderer {
     var scale: Float = 1.0
@@ -78,8 +79,7 @@ class CropRender: MetalRenderer {
     
     // 平移图像
     func pan(deltaX: Float, deltaY: Float) {
-        // 增加平移偏移量，根据缩放因子调整灵敏度
-        // 缩放越大，移动越慢，提供更精细的控制
+        print("deltaX:\(deltaX) - deltaY:\(deltaY)")
         let sensitivityFactor = 1.0 / scale
         
         let adjustedDeltaX = deltaX * sensitivityFactor
@@ -87,13 +87,6 @@ class CropRender: MetalRenderer {
         
         offsetX += adjustedDeltaX
         offsetY += adjustedDeltaY
-        
-        // 计算最大偏移范围 - 缩放比例越大，可移动范围越大
-        let maxOffset = max(0.5, scale - 1.0) * 2.0
-        
-        // 限制偏移范围，防止图像移出视图太远
-        offsetX = max(-maxOffset, min(maxOffset, offsetX))
-        offsetY = max(-maxOffset, min(maxOffset, offsetY))
         
         // 更新顶点
         updateVertices()
@@ -131,36 +124,22 @@ class CropRender: MetalRenderer {
         let imageWidth = sourceTexture.width
         let imageHeight = sourceTexture.height
         
-        // 计算实际图像坐标系中的裁剪起点和尺寸
-        // 当图像放大和平移时，需要调整裁剪的起始位置
-        
-        // 从归一化坐标[-1,1]转换到图像像素坐标[0,imageWidth/imageHeight]
-        // 首先计算未经缩放和平移的归一化裁剪区域
         let normalizedFromX = (Float(fromX) / Float(imageWidth)) * 2.0 - 1.0
-        let normalizedFromY = 1.0 - (Float(fromY) / Float(imageHeight)) * 2.0 // Y轴方向相反
-        
-        // 考虑缩放和平移的影响
-        // 当放大图像时，裁剪区域需要相应缩小
-        // 当平移图像时，裁剪起点需要相应偏移
+        let normalizedFromY = 1.0 - (Float(fromY) / Float(imageHeight)) * 2.0
+
         let adjustedNormalizedFromX = (normalizedFromX - offsetX) / scale
         let adjustedNormalizedFromY = (normalizedFromY - offsetY) / scale
         
-        // 将归一化坐标转回图像像素坐标
         let adjustedFromX = Int(((adjustedNormalizedFromX + 1.0) / 2.0) * Float(imageWidth))
         let adjustedFromY = Int(((1.0 - adjustedNormalizedFromY) / 2.0) * Float(imageHeight))
         
-        // 同样调整裁剪宽度和高度
         let adjustedWidth = Int(Float(width) / scale)
         let adjustedHeight = Int(Float(height) / scale)
         
-        // 确保裁剪区域在有效范围内
         let validFromX = max(0, min(adjustedFromX, sourceTexture.width - 1))
         let validFromY = max(0, min(adjustedFromY, sourceTexture.height - 1))
         let validWidth = min(adjustedWidth, sourceTexture.width - validFromX)
         let validHeight = min(adjustedHeight, sourceTexture.height - validFromY)
-        
-        print("Original crop region: x=\(fromX), y=\(fromY), width=\(width), height=\(height)")
-        print("Adjusted crop region: x=\(validFromX), y=\(validFromY), width=\(validWidth), height=\(validHeight)")
         
         // 创建目标纹理描述符
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -274,4 +253,5 @@ class CropRender: MetalRenderer {
         setupVertices(for: imageSize, in: viewSize)
     }
 
+    
 }
