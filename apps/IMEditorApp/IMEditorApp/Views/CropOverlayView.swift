@@ -223,9 +223,9 @@ struct CropOverlayView: View {
     }
     
     @State private var lastDragLocation: CGPoint?
+    @State private var lastScale: CGFloat?
     
     fileprivate func centerArea() -> some View {
-        // 中心拖动区域
         Rectangle()
             .fill(Color.clear)
             .contentShape(Rectangle())
@@ -243,17 +243,13 @@ struct CropOverlayView: View {
                         .onEnded { value in
                             lastDragLocation = nil
                         },
-                    // 缩放手势
                     MagnificationGesture()
                         .onChanged { scale in
-                            // 调整缩放灵敏度
-                            let adjustedScale = 1.0 + (scale - 1.0) * 0.5 // 降低缩放速度
+                            let adjustedScale = 1.0 + (scale - 1.0) * 0.5
                             self.scale = adjustedScale
                         }
                         .onEnded { _ in
-                            // 结束时重置缩放比例，使下次缩放从1开始计算
                             self.scale = 1.0
-                            saveInitialRect()
                         }
                 )
             )
@@ -268,25 +264,20 @@ struct CropOverlayView: View {
     }
     
     var body: some View {
-        // 使用ZStack包裹所有子视图，并使其完全填充父视图
         ZStack {
-            // 遮罩层
             ZStack {
-                // 半透明蒙版背景
                 Color.black.opacity(0.3)
                 
-                // 裁剪框区域 - 使用清除遮罩创建透明区域
                 Rectangle()
                     .fill(Color.white)
                     .frame(width: rightEdge - leftEdge, height: bottomEdge - topEdge)
                     .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
                     .blendMode(.destinationOut)
             }
-            .compositingGroup() // 确保混合模式正确应用
+            .compositingGroup()
             
             centerArea()
             
-            // 裁剪框边界线
             cropArea()
                 
             topline()

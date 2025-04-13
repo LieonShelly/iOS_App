@@ -37,7 +37,6 @@ struct ContentView: View {
                     .onChange(of: translation) { newValue in
                         let martrix = Martrix.screenToMetalDeltaMartrix(geometry.size)
                         let offset = martrix * SIMD3<Float>(Float(newValue.x), Float(newValue.y), 1)
-                        print(offset)
                         renderer.pan(deltaX: offset.x, deltaY: offset.y)
                     }
                 
@@ -65,6 +64,21 @@ struct ContentView: View {
                     Spacer()
                     HStack {
                         Button("应用裁剪") {
+                           let screenToMetalMartrix = Martrix.screenToMetalMartrix(geometry.size)
+                            let leftTop = screenToMetalMartrix * SIMD3<Float>(Float(cropRect.origin.x), Float(cropRect.origin.y), 1)
+                            let bottomRight = screenToMetalMartrix * SIMD3<Float>(Float(cropRect.maxX), Float(cropRect.maxY), 1)
+                            renderer.crop(
+                                CGRect(origin: CGPoint(x: CGFloat(leftTop.x), y: CGFloat(leftTop.y)),
+                                       size: CGSize(width: CGFloat(bottomRight.x - leftTop.x),
+                                                    height: CGFloat(leftTop.y - bottomRight.y))),
+                                completion: { success in
+                                    if success {
+                                        renderer.display(in: CGSize(width: geometry.size.width - 20, height: geometry.size.width - 20).sizeInMetal)
+                                        imageFrame = renderer.getImageFrame(in: geometry.size)
+                                        cropRect = imageFrame
+                                    }
+                                })
+                            return
                             // Convert screen coordinates to image coordinates
                             let normalizedX = (cropRect.minX - imageFrame.minX) / imageFrame.width
                             let normalizedY = (cropRect.minY - imageFrame.minY) / imageFrame.height
