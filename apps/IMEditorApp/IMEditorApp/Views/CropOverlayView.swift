@@ -4,7 +4,7 @@ struct CropOverlayView: View {
     @Binding var cropRect: CGRect
     @Binding var scale: CGFloat
     @Binding var translation: CGPoint
-    
+    @Binding var rotationAngle: Angle
     
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
@@ -253,6 +253,12 @@ struct CropOverlayView: View {
                         }
                 )
             )
+//            .gesture(
+//                RotateGesture()
+//                .onChanged { value in
+//                    self.rotationAngle = value.rotation
+//                }
+//            )
     }
     
     fileprivate func cropArea() -> some View {

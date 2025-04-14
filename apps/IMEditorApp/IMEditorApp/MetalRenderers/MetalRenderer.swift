@@ -127,29 +127,21 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
         let imageAspect = imageSize.width / imageSize.height
         let viewAspect = viewSize.width / viewSize.height
         
-        // 计算图像在画布中的显示尺寸
         var displayWidth: CGFloat = viewSize.width
         var displayHeight: CGFloat = viewSize.height
         
         if imageAspect > viewAspect {
-            // 图像比视图更宽，以宽度为基准
             displayHeight = viewSize.width / imageAspect
         } else {
-            // 图像比视图更高，以高度为基准
             displayWidth = viewSize.height * imageAspect
         }
-        
-        // 计算归一化坐标系中的缩放因子
+    
         let normalizedScaleX = Float(displayWidth / canvasSize.width)
         let normalizedScaleY = Float(displayHeight / canvasSize.height)
         
-        print("normalizedScaleX:\(normalizedScaleX) - normalizedScaleY:\(normalizedScaleY)")
-        
-        // 应用当前的缩放和平移
         let zoomedScaleX: Float = normalizedScaleX
         let zoomedScaleY: Float = normalizedScaleY
         
-        // 保存当前顶点坐标（归一化坐标系）
         currentVertices = [
             CGPoint(x: CGFloat(-zoomedScaleX), y: CGFloat(zoomedScaleY)),     // 左上角
             CGPoint(x: CGFloat(-zoomedScaleX), y: CGFloat(-zoomedScaleY)),    // 左下角
@@ -157,7 +149,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
             CGPoint(x: CGFloat(zoomedScaleX ), y: CGFloat(zoomedScaleY))       // 右上角
         ]
         
-        // 创建顶点数据（位置 + 纹理坐标）
         let quadVertices: [Float] = [
             // 位置 (x, y)                    纹理坐标 (u, v)
             -zoomedScaleX,  zoomedScaleY,    0.0, 0.0,  // 左上角
@@ -173,7 +164,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     }
 
     func getImageFrame(in viewSize: CGSize) -> CGRect {
-        // 使用保存的当前顶点坐标
         let screenVertices = currentVertices.map { vertex in
             CGPoint(
                 x: (vertex.x + 1) * viewSize.width / 2,
@@ -181,7 +171,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
             )
         }
         
-        // 计算边界框
         let minX = screenVertices.map { $0.x }.min() ?? 0
         let minY = screenVertices.map { $0.y }.min() ?? 0
         let maxX = screenVertices.map { $0.x }.max() ?? 0
@@ -197,19 +186,14 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
 //         }
     }
     
-    
-
-    // 保存纹理为图片文件（用于调试）
     func saveTextureToFile(_ texture: MTLTexture, filename: String) {
         let width = texture.width
         let height = texture.height
         let bytesPerRow = width * 4 // 假设是RGBA格式
         
-        // 创建缓冲区来存储纹理数据
         let data = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height * 4)
         defer { data.deallocate() }
         
-        // 从纹理读取数据
         texture.getBytes(
             data,
             bytesPerRow: bytesPerRow,
@@ -217,7 +201,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
             mipmapLevel: 0
         )
         
-        // 创建CGImage
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
         
@@ -239,7 +222,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
             return
         }
         
-        // 保存为PNG文件
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         if let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) {
             CGImageDestinationAddImage(destination, cgImage, nil)

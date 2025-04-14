@@ -12,13 +12,13 @@ import UniformTypeIdentifiers
 import simd
 
 class CropRender: MetalRenderer {
-    var scale: Float = 1.0
+    var scale: Float = 1
     var offsetX: Float = 0.0
     var offsetY: Float = 0.0
     var isCropped: Bool = false
-    
+    var angle: Float = 0.0
 
-    override  func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
+    override func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
         let viewSize = CGSize(width: viewSize.width, height: viewSize.height)
         let imageAspect = imageSize.width / imageSize.height
         let viewAspect = viewSize.width / viewSize.height
@@ -32,25 +32,38 @@ class CropRender: MetalRenderer {
             displayWidth = viewSize.height * imageAspect
         }
         
-        let normalizedScaleX = Float(displayWidth / canvasSize.width)
-        let normalizedScaleY = Float(displayHeight / canvasSize.height)
+        // ⬇️ 模型变换：缩放、旋转、平移
+        let scaleX = Float(displayWidth) * scale
+        let scaleY = Float(displayHeight) * scale
+        let scaleMatrix = Martrix.scaleMartrix(scaleX: scaleX, scaleY: scaleY)
+        let rotationMatrix = Martrix.rotationMartrix(angle)
+        let translationMatrix = Martrix.translationMartrix(tx: offsetX, ty: offsetY)
+        let modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
         
-        let zoomedScaleX = normalizedScaleX * scale
-        let zoomedScaleY = normalizedScaleY * scale
+        // ⬇️ 正交投影矩阵：从屏幕空间映射到 Metal 的 NDC 空间（-1 ~ 1）
+        let projectionMatrix = float3x3(orthographic: CGRect(x: 0, y: 0, width: viewSize.width, height: viewSize.height), near: -1, far: 1)
+        let transform = projectionMatrix * modelMatrix
         
+        let halfW: Float = 0.5
+        let halfH: Float = 0.5
+        
+        let topLeft = transform * SIMD3<Float>(-halfW,  halfH, 1)
+        let bottomLeft = transform * SIMD3<Float>(-halfW, -halfH, 1)
+        let bottomRight = transform * SIMD3<Float>( halfW, -halfH, 1)
+        let topRight = transform * SIMD3<Float>( halfW,  halfH, 1)
+       
         currentVertices = [
-            CGPoint(x: CGFloat(-zoomedScaleX + offsetX), y: CGFloat(zoomedScaleY + offsetY)),     // 左上角
-            CGPoint(x: CGFloat(-zoomedScaleX + offsetX), y: CGFloat(-zoomedScaleY + offsetY)),    // 左下角
-            CGPoint(x: CGFloat(zoomedScaleX + offsetX), y: CGFloat(-zoomedScaleY + offsetY)),     // 右下角
-            CGPoint(x: CGFloat(zoomedScaleX + offsetX), y: CGFloat(zoomedScaleY + offsetY))       // 右上角
+            CGPoint(x: CGFloat(topLeft.x), y: CGFloat(topLeft.y)),
+            CGPoint(x: CGFloat(bottomLeft.x), y: CGFloat(bottomLeft.y)),
+            CGPoint(x: CGFloat(bottomRight.x), y: CGFloat(bottomRight.y)),
+            CGPoint(x: CGFloat(topRight.x), y: CGFloat(topRight.y))
         ]
-        
+
         let quadVertices: [Float] = [
-            // 位置 (x, y)                    纹理坐标 (u, v)
-            -zoomedScaleX + offsetX,  zoomedScaleY + offsetY,    0.0, 0.0,  // 左上角
-            -zoomedScaleX + offsetX, -zoomedScaleY + offsetY,    0.0, 1.0,  // 左下角
-             zoomedScaleX + offsetX, -zoomedScaleY + offsetY,    1.0, 1.0,  // 右下角
-             zoomedScaleX + offsetX,  zoomedScaleY + offsetY,    1.0, 0.0   // 右上角
+            topLeft.x,     topLeft.y,     0.0, 0.0,
+            bottomLeft.x,  bottomLeft.y,  0.0, 1.0,
+            bottomRight.x, bottomRight.y, 1.0, 1.0,
+            topRight.x,    topRight.y,    1.0, 0.0
         ]
         
         let indices: [UInt16] = [ 0, 1, 2,  2, 3, 0 ]  // 三角形索引
@@ -59,19 +72,15 @@ class CropRender: MetalRenderer {
         indexBuffer = device.makeBuffer(bytes: indices, length: indices.count * MemoryLayout<UInt16>.size, options: [])
     }
     
-    // 缩放图像
     func zoom(factor: Float) {
         let newScale = scale * factor
-        // 限制缩放范围
         if newScale >= 0.1 && newScale <= 5.0 {
             scale = newScale
             updateVertices()
         }
     }
     
-    // 平移图像
     func pan(deltaX: Float, deltaY: Float) {
-        print("deltaX:\(deltaX) - deltaY:\(deltaY)")
         let sensitivityFactor = 1.0 / scale
         
         let adjustedDeltaX = deltaX * sensitivityFactor
@@ -79,33 +88,29 @@ class CropRender: MetalRenderer {
         
         offsetX += adjustedDeltaX
         offsetY += adjustedDeltaY
-        
-        // 更新顶点
         updateVertices()
     }
     
-    // 重置缩放和平移
+    func rotate(_ angleRadians: Float) {
+        self.angle += angleRadians
+        updateVertices()
+    }
+    
     func resetTransform() {
         scale = 1.0
         offsetX = 0.0
         offsetY = 0.0
     }
     
-    // 更新顶点缓冲区
     private func updateVertices() {
         guard let texture = texture else { return }
         let imageSize = CGSize(width: texture.width, height: texture.height)
-        
-        // 使用当前显示尺寸或合理的默认值
         let viewSize = displaySize != .zero ? 
             displaySize : 
             CGSize(width: canvasSize.width * 2, height: canvasSize.height * 2)
-        
-        // 重新计算顶点
         setupVertices(for: imageSize, in: viewSize)
     }
 
-    // 裁剪图像
     func crop(_ cropRectInMetal: CGRect,  completion: @escaping (Bool) -> Void) {
         guard let sourceTexture = texture else { return }
         let minX = currentVertices.map {$0.x}.min()!
@@ -118,7 +123,6 @@ class CropRender: MetalRenderer {
         let relativeW = cropRectInMetal.width / imageRectInMetal.width
         let relativehH = cropRectInMetal.height / imageRectInMetal.height
      
-        
         let validFromX = max(0, min(Int(Float(relativeX) * Float(sourceTexture.width)), sourceTexture.width - 1))
         let validFromY = max(0, min(Int(Float(relativeY) * Float(sourceTexture.height)), sourceTexture.height - 1))
         let validWidth = min(Int(Float(relativeW) * Float(sourceTexture.width)), sourceTexture.width - validFromX)
@@ -201,6 +205,4 @@ class CropRender: MetalRenderer {
         // 等待命令缓冲区完成
         commandBuffer.waitUntilCompleted()
     }
-
-    
 }

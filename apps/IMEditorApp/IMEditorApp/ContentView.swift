@@ -15,8 +15,8 @@ struct ContentView: View {
     @State private var translation: CGPoint = .zero
     @State private var imageFrame: CGRect = .zero
     @State private var debounceItem: DispatchWorkItem?
-    @State private var deltaX: Float = 0
-    @State private var deltaY: Float = 0
+    @State private var rotationAngle: Angle = .zero
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -35,19 +35,21 @@ struct ContentView: View {
                         renderer.zoom(factor: scaleFactor)
                     }
                     .onChange(of: translation) { newValue in
-                        let martrix = Martrix.screenToMetalDeltaMartrix(geometry.size)
-                        let offset = martrix * SIMD3<Float>(Float(newValue.x), Float(newValue.y), 1)
+                        let offset = SIMD3<Float>(Float(CGFloat(newValue.x ) *  UIScreen.main.nativeScale), Float(CGFloat(-newValue.y) *  UIScreen.main.nativeScale), 1)
                         renderer.pan(deltaX: offset.x, deltaY: offset.y)
+                    }
+                    .onChange(of: rotationAngle) { newValue in
+                        print("rotationAngle: \(newValue)")
+                        renderer.rotate(Float(newValue.radians))
                     }
                 
                 // 裁剪框层 (固定位置)
                 Color.clear
                     .overlay(
-                        CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation)
+                        CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle)
                     )
                     .allowsHitTesting(true)
                     .onChange(of: cropRect) { newRect in
-                        // Ensure crop rect stays within image bounds
                         let boundedRect = CGRect(
                             x: max(imageFrame.minX, min(newRect.minX, imageFrame.maxX - newRect.width)),
                             y: max(imageFrame.minY, min(newRect.minY, imageFrame.maxY - newRect.height)),
@@ -78,25 +80,6 @@ struct ContentView: View {
                                         cropRect = imageFrame
                                     }
                                 })
-                            return
-                            // Convert screen coordinates to image coordinates
-                            let normalizedX = (cropRect.minX - imageFrame.minX) / imageFrame.width
-                            let normalizedY = (cropRect.minY - imageFrame.minY) / imageFrame.height
-                            let normalizedWidth = cropRect.width / imageFrame.width
-                            let normalizedHeight = cropRect.height / imageFrame.height
-                            
-                            let imageX = Int(normalizedX * CGFloat(renderer.texture?.width ?? 0))
-                            let imageY = Int(normalizedY * CGFloat(renderer.texture?.height ?? 0))
-                            let imageWidth = Int(normalizedWidth * CGFloat(renderer.texture?.width ?? 0))
-                            let imageHeight = Int(normalizedHeight * CGFloat(renderer.texture?.height ?? 0))
-                            
-                            renderer.cropImage(fromX: imageX, fromY: imageY, width: imageWidth, height: imageHeight) { success in
-                                if success {
-                                    renderer.display(in: CGSize(width: geometry.size.width - 20, height: geometry.size.width - 20).sizeInMetal)
-                                    imageFrame = renderer.getImageFrame(in: geometry.size)
-                                    cropRect = imageFrame
-                                }
-                            }
                         }
                         .padding()
                         .background(Color.black.opacity(0.6))
@@ -114,20 +97,6 @@ struct ContentView: View {
                     }
                 }
             }
-        }
-        .onAppear {
-            let screenSize: CGSize = CGSize(width: 100, height: 100)
-            let martrix = Martrix.screenToMetalMartrix(screenSize)
-            
-            print(martrix * SIMD3<Float>(0, 0, 1))
-            print(martrix * SIMD3<Float>(50, 50, 1))
-            print(martrix * SIMD3<Float>(100, 100,1))
-            print(martrix * SIMD3<Float>(100, 0,1))
-            print(martrix *  SIMD3<Float>(0, 100,1))
-            print("=========")
-            print(martrix.inverse *  SIMD3<Float>(0, 0,1))
-            print(martrix.inverse *  SIMD3<Float>(1, -1,1))
-            print(martrix.inverse *  SIMD3<Float>(-1, 1,1))
         }
     }
 }
