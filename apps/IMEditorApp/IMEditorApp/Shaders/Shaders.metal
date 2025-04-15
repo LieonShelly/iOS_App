@@ -21,9 +21,13 @@ struct VertexOut {
     float2 texCoord;
 };
 
-vertex VertexOut vertexShader(VertexIn in [[stage_in]]) {
+struct Uniforms {
+    float4x4 transform;
+};
+
+vertex VertexOut vertexShader(VertexIn in [[stage_in]], constant Uniforms& uniforms [[buffer(1)]]) {
     VertexOut out;
-    out.position = in.position;  // 直接传递位置
+    out.position = uniforms.transform * in.position;  // 直接传递位置
     out.texCoord = in.texCoord;  // 确保传递纹理坐标
     return out;
 }

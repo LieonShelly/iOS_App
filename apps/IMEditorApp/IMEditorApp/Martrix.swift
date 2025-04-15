@@ -7,6 +7,7 @@
 
 import simd
 import Foundation
+import CoreGraphics
 
 enum Martrix {
     static func screenToMetalMartrix(_ screenSize: CGSize) -> float3x3 {
@@ -187,4 +188,7 @@ extension float4x4 {
         ])
     }
     
+    static var identity: float4x4 {
+        return matrix_identity_float4x4
+    }
 }

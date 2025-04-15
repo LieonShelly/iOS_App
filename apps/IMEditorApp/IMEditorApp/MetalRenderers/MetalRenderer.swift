@@ -23,6 +23,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     var canvasSize: CGSize = .zero
     var imageSize: CGSize = .zero
     var displaySize: CGSize = .zero
+    var uniforms: Uniforms = .init(transform: .identity)
     
     override init() {
         self.device = MTLCreateSystemDefaultDevice()
@@ -33,6 +34,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
         super.init()
         metalView.delegate = self
         setupPipeline(metalView)
+
     }
     
     func updateCanvasSize(_ size: CGSize) {
@@ -112,6 +114,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
         
         commandEncoder?.setRenderPipelineState(pipelineState)
         commandEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        commandEncoder?.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
         commandEncoder?.setFragmentTexture(texture, index: 0)
         
         commandEncoder?.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
@@ -123,39 +126,32 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     }
     
     func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
-        let viewSize = CGSize(width: viewSize.width, height: viewSize.height)
-        let imageAspect = imageSize.width / imageSize.height
-        let viewAspect = viewSize.width / viewSize.height
-        
-        var displayWidth: CGFloat = viewSize.width
-        var displayHeight: CGFloat = viewSize.height
-        
-        if imageAspect > viewAspect {
-            displayHeight = viewSize.width / imageAspect
-        } else {
-            displayWidth = viewSize.height * imageAspect
-        }
-    
-        let normalizedScaleX = Float(displayWidth / canvasSize.width)
-        let normalizedScaleY = Float(displayHeight / canvasSize.height)
-        
-        let zoomedScaleX: Float = normalizedScaleX
-        let zoomedScaleY: Float = normalizedScaleY
-        
+        let imageAspect = Float(imageSize.width / imageSize.height)
+        let halfH: Float = 0.8
+        let halfW: Float = 0.8 * imageAspect  // 宽 = 高 * 宽高比
+
+        let transform: float4x4 = .identity
+
+        let topLeft     = transform * SIMD4<Float>(-halfW,  halfH, 0, 1)
+        let bottomLeft  = transform * SIMD4<Float>(-halfW, -halfH, 0, 1)
+        let bottomRight = transform * SIMD4<Float>( halfW, -halfH, 0, 1)
+        let topRight    = transform * SIMD4<Float>( halfW,  halfH, 0, 1)
+
         currentVertices = [
-            CGPoint(x: CGFloat(-zoomedScaleX), y: CGFloat(zoomedScaleY)),     // 左上角
-            CGPoint(x: CGFloat(-zoomedScaleX), y: CGFloat(-zoomedScaleY)),    // 左下角
-            CGPoint(x: CGFloat(zoomedScaleX), y: CGFloat(-zoomedScaleY)),     // 右下角
-            CGPoint(x: CGFloat(zoomedScaleX ), y: CGFloat(zoomedScaleY))       // 右上角
+            CGPoint(x: CGFloat(topLeft.x), y: CGFloat(topLeft.y)),
+            CGPoint(x: CGFloat(bottomLeft.x), y: CGFloat(bottomLeft.y)),
+            CGPoint(x: CGFloat(bottomRight.x), y: CGFloat(bottomRight.y)),
+            CGPoint(x: CGFloat(topRight.x), y: CGFloat(topRight.y))
         ]
-        
+
         let quadVertices: [Float] = [
-            // 位置 (x, y)                    纹理坐标 (u, v)
-            -zoomedScaleX,  zoomedScaleY,    0.0, 0.0,  // 左上角
-            -zoomedScaleX, -zoomedScaleY,    0.0, 1.0,  // 左下角
-             zoomedScaleX, -zoomedScaleY,    1.0, 1.0,  // 右下角
-             zoomedScaleX,  zoomedScaleY,    1.0, 0.0   // 右上角
+            topLeft.x,     topLeft.y,     0.0, 0.0,
+            bottomLeft.x,  bottomLeft.y,  0.0, 1.0,
+            bottomRight.x, bottomRight.y, 1.0, 1.0,
+            topRight.x,    topRight.y,    1.0, 0.0
         ]
+
+        print(quadVertices)
         
         let indices: [UInt16] = [ 0, 1, 2,  2, 3, 0 ]  // 三角形索引
 

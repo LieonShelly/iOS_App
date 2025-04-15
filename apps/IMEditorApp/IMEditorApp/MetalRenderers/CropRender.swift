@@ -17,67 +17,8 @@ class CropRender: MetalRenderer {
     var offsetY: Float = 0.0
     var isCropped: Bool = false
     var angle: Float = 0.0
-
-    override func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
-        let viewSize = CGSize(width: viewSize.width, height: viewSize.height)
-        let imageAspect = imageSize.width / imageSize.height
-        let viewAspect = viewSize.width / viewSize.height
-        
-        var displayWidth: CGFloat = viewSize.width
-        var displayHeight: CGFloat = viewSize.height
-        
-        if imageAspect > viewAspect {
-            displayHeight = viewSize.width / imageAspect
-        } else {
-            displayWidth = viewSize.height * imageAspect
-        }
-        
-        // ⬇️ 模型变换：缩放、旋转、平移
-        let scaleX = Float(displayWidth) * scale
-        let scaleY = Float(displayHeight) * scale
-        let scaleMatrix = float4x4(scaleX: scaleX, scaleY: scaleY)
-        let translationMatrix = float4x4(translationX: offsetX, translationY: offsetY)
-        let rotationMatrix = float4x4(rotationAngle: angle)
-        let modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
-        
-        // ⬇️ 正交投影矩阵：从屏幕空间映射到 Metal 的 NDC 空间（-1 ~ 1）
-        let projectionMatrix = float4x4(
-            orthographicLeft: -Float(viewSize.width) / 2,
-            right: Float(viewSize.width) / 2,
-            bottom: -Float(viewSize.height) / 2,
-            top: Float(viewSize.height) / 2,
-            near: -1,
-            far: 1
-        )
-        let transform = projectionMatrix * modelMatrix
-        
-        let halfW: Float = 0.5
-        let halfH: Float = 0.5
-        
-        let topLeft = transform * SIMD4<Float>(-halfW,  halfH, 0, 1)
-        let bottomLeft = transform * SIMD4<Float>(-halfW, -halfH, 0, 1)
-        let bottomRight = transform * SIMD4<Float>( halfW, -halfH, 0, 1)
-        let topRight = transform * SIMD4<Float>( halfW,  halfH, 0, 1)
-       
-        currentVertices = [
-            CGPoint(x: CGFloat(topLeft.x), y: CGFloat(topLeft.y)),
-            CGPoint(x: CGFloat(bottomLeft.x), y: CGFloat(bottomLeft.y)),
-            CGPoint(x: CGFloat(bottomRight.x), y: CGFloat(bottomRight.y)),
-            CGPoint(x: CGFloat(topRight.x), y: CGFloat(topRight.y))
-        ]
-
-        let quadVertices: [Float] = [
-            topLeft.x,     topLeft.y,     0.0, 0.0,
-            bottomLeft.x,  bottomLeft.y,  0.0, 1.0,
-            bottomRight.x, bottomRight.y, 1.0, 1.0,
-            topRight.x,    topRight.y,    1.0, 0.0
-        ]
-        
-        let indices: [UInt16] = [ 0, 1, 2,  2, 3, 0 ]  // 三角形索引
-
-        vertexBuffer = device.makeBuffer(bytes: quadVertices, length: quadVertices.count * MemoryLayout<Float>.size, options: [])
-        indexBuffer = device.makeBuffer(bytes: indices, length: indices.count * MemoryLayout<UInt16>.size, options: [])
-    }
+    var modelMatrix: float4x4 = .identity
+  
     
     func zoom(factor: Float) {
         let newScale = scale * factor
@@ -88,6 +29,7 @@ class CropRender: MetalRenderer {
     }
     
     func pan(deltaX: Float, deltaY: Float) {
+        print("deltaX:\(deltaX) - deltaY:\(deltaY)")
         let sensitivityFactor = 1.0 / scale
         
         let adjustedDeltaX = deltaX * sensitivityFactor
@@ -112,104 +54,103 @@ class CropRender: MetalRenderer {
     private func updateVertices() {
         guard let texture = texture else { return }
         let imageSize = CGSize(width: texture.width, height: texture.height)
-        let viewSize = displaySize != .zero ? 
-            displaySize : 
-            CGSize(width: canvasSize.width * 2, height: canvasSize.height * 2)
+        let viewSize = displaySize != .zero ?
+        displaySize :
+        CGSize(width: canvasSize.width * UIScreen.main.nativeScale, height: canvasSize.height * UIScreen.main.nativeScale)
         setupVertices(for: imageSize, in: viewSize)
     }
+    
+    
+    override func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
+        super.setupVertices(for: imageSize, in: viewSize)
+        
+        // ⬇️ 模型变换：缩放、旋转、平移
+        let scaleMatrix = float4x4(scaleX: scale, scaleY: scale)
+        let translationMatrix = float4x4(translationX: offsetX, translationY: offsetY)
+        let rotationMatrix = float4x4(rotationAngle: angle)
+        self.modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
+        
+        // ⬇️ 正交投影矩阵：从屏幕空间映射到 Metal 的 NDC 空间（-1 ~ 1）
+        let viewAspect = Float(viewSize.width / viewSize.height)
+        let projectionMatrix = float4x4(
+            orthographicLeft:  -viewAspect,
+            right: viewAspect,
+            bottom: -1.0,
+            top: 1,
+            near: -1,
+            far: 1
+        )
+        uniforms.transform = projectionMatrix * modelMatrix
 
-    func crop(_ cropRectInMetal: CGRect,  completion: @escaping (Bool) -> Void) {
-        guard let sourceTexture = texture else { return }
-        let minX = currentVertices.map {$0.x}.min()!
-        let maxX = currentVertices.map {$0.x}.max()!
-        let minY = currentVertices.map {$0.y}.min()!
-        let maxY = currentVertices.map {$0.y}.max()!
-        let imageRectInMetal = CGRect(x: minX, y: maxY, width: maxX - minX, height: maxY - minY)
-        let relativeX = (cropRectInMetal.origin.x - imageRectInMetal.origin.x) / imageRectInMetal.width
-        let relativeY = abs(cropRectInMetal.origin.y - imageRectInMetal.origin.y) / imageRectInMetal.height
-        let relativeW = cropRectInMetal.width / imageRectInMetal.width
-        let relativehH = cropRectInMetal.height / imageRectInMetal.height
-     
-        let validFromX = max(0, min(Int(Float(relativeX) * Float(sourceTexture.width)), sourceTexture.width - 1))
-        let validFromY = max(0, min(Int(Float(relativeY) * Float(sourceTexture.height)), sourceTexture.height - 1))
-        let validWidth = min(Int(Float(relativeW) * Float(sourceTexture.width)), sourceTexture.width - validFromX)
-        let validHeight = min(Int(Float(relativehH) * Float(sourceTexture.height)), sourceTexture.height - validFromY)
-        
-        let region = MTLRegion(
-            origin: MTLOrigin(x: validFromX,
-                              y: validFromY,
-                              z: 0),
-            size: MTLSize(width: validWidth,
-                          height: validHeight,
-                          depth: 1)
-        )
-        
-        // 创建目标纹理描述符
-        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: sourceTexture.pixelFormat,
-            width: validWidth,
-            height: validHeight,
-            mipmapped: false
-        )
-        
-        textureDescriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
-        textureDescriptor.storageMode = .shared
-        
-        guard let croppedTexture = device.makeTexture(descriptor: textureDescriptor) else {
-            completion(false)
-            return
-        }
-        
-        // 创建命令缓冲区
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-            completion(false)
-            return
-        }
-        
-        // 创建裁剪区域
-        
-        // 创建Blit编码器用于复制纹理区域
-        guard let blitEncoder = commandBuffer.makeBlitCommandEncoder() else {
-            completion(false)
-            return
-        }
-        
-        // 复制源纹理的一部分到目标纹理
-        blitEncoder.copy(
-            from: sourceTexture,
-            sourceSlice: 0,
-            sourceLevel: 0,
-            sourceOrigin: region.origin,
-            sourceSize: region.size,
-            to: croppedTexture,
-            destinationSlice: 0,
-            destinationLevel: 0,
-            destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0)
-        )
-        
-        blitEncoder.endEncoding()
-        
-        // 完成命令缓冲区并设置完成回调
-        commandBuffer.addCompletedHandler { [weak self] _ in
-            DispatchQueue.main.async {
-                // 保存裁剪后的纹理用于调试
-                self?.saveTextureToFile(croppedTexture, filename: "cropped_texture.png")
-                
-                // 确保在设置新纹理之前清除旧纹理
-                self?.texture = nil
-                self?.texture = croppedTexture
-                self?.imageSize = CGSize(width: validWidth, height: validHeight)
-                // 重置变换
-                self?.resetTransform()
-                self?.isCropped = true
-                completion(true)
-            }
-        }
-        
-        // 提交命令缓冲区
-        commandBuffer.commit()
-        
-        // 等待命令缓冲区完成
-        commandBuffer.waitUntilCompleted()
     }
+    
+    func newCrop(_ cropRectInView: CGRect, completion: @escaping (Bool) -> Void) {
+        let viewSize = metalView.drawableSize
+        let cropRectInView = CGRect(x: cropRectInView.origin.x * UIScreen.main.nativeScale,
+                                    y: cropRectInView.origin.y * UIScreen.main.nativeScale,
+                                    width: cropRectInView.width * UIScreen.main.nativeScale,
+                                    height: cropRectInView.height * UIScreen.main.nativeScale)
+        
+        // 1. 将 cropRect 从 UIKit 坐标转换为 Metal 坐标中心为 (0,0)
+        let viewAspect = Float(viewSize.width / viewSize.height)
+        let cropLeft = (Float(cropRectInView.minX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
+        let cropRight = (Float(cropRectInView.maxX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
+        let cropTop = (1.0 - Float(cropRectInView.minY) / Float(viewSize.height)) * 2.0 - 1.0
+        let cropBottom = (1.0 - Float(cropRectInView.maxY) / Float(viewSize.height)) * 2.0 - 1.0
+
+        
+        let cropProjection = float4x4(orthographicLeft: cropLeft, right: cropRight, bottom: cropBottom, top: cropTop, near: -1, far: 1)
+        var cropTransform = cropProjection * modelMatrix
+        
+        
+        // 2. 创建裁剪目标纹理
+        let cropPixelWidth = Int(cropRectInView.size.width * UIScreen.main.scale)
+        let cropPixelHeight = Int(cropRectInView.size.height * UIScreen.main.scale)
+        
+        let outputDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm,
+                                                                  width: cropPixelWidth,
+                                                                  height: cropPixelHeight,
+                                                                  mipmapped: false)
+        outputDesc.usage = [.renderTarget, .shaderRead, .shaderWrite]
+        guard let outputTexture = device.makeTexture(descriptor: outputDesc) else {
+            return
+        }
+        
+        guard let renderPassDescriptor = makeRenderPassDescriptor(for: outputTexture) else { return  }
+
+
+        guard let commandBuffer = commandQueue.makeCommandBuffer(),
+              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
+        else {
+            return
+        }
+        
+        encoder.setRenderPipelineState(pipelineState)
+        encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        encoder.setVertexBytes(&cropTransform, length: MemoryLayout<float4x4>.size, index: 1)
+        encoder.setFragmentTexture(texture, index: 0)
+        encoder.drawIndexedPrimitives(type: .triangle,
+                                      indexCount: indexBuffer.length / MemoryLayout<UInt16>.stride,
+                                      indexType: .uint16,
+                                      indexBuffer: indexBuffer,
+                                      indexBufferOffset: 0)
+        encoder.endEncoding()
+        self.saveTextureToFile(texture!, filename: "source.png")
+        commandBuffer.addCompletedHandler { _ in
+            self.saveTextureToFile(outputTexture, filename: "out.png")
+            
+        }
+        
+        commandBuffer.commit()
+    }
+    
+    func makeRenderPassDescriptor(for texture: MTLTexture) -> MTLRenderPassDescriptor? {
+        let descriptor = MTLRenderPassDescriptor()
+        descriptor.colorAttachments[0].texture = texture
+        descriptor.colorAttachments[0].loadAction = .clear
+        descriptor.colorAttachments[0].storeAction = .store
+        descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        return descriptor
+    }
+
 }

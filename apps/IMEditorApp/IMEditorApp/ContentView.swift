@@ -30,16 +30,14 @@ struct ContentView: View {
                         cropRect = imageFrame
                     })
                     .onChange(of: scale) {_, newValue in
-                        // 计算缩放因子 - 确保1.0是无缩放状态
                         let scaleFactor = Float(newValue)
                         renderer.zoom(factor: scaleFactor)
                     }
                     .onChange(of: translation) {_, newValue in
-                        let offset = SIMD3<Float>(Float(CGFloat(newValue.x ) *  UIScreen.main.nativeScale), Float(CGFloat(-newValue.y) *  UIScreen.main.nativeScale), 1)
+                        let offset = SIMD3<Float>(Float(CGFloat(newValue.x / geometry.size.width)), -Float(CGFloat(newValue.y / geometry.size.height)), 1)
                         renderer.pan(deltaX: offset.x, deltaY: offset.y)
                     }
                     .onChange(of: rotationAngle) {_,  newValue in
-                        print("rotationAngle: \(newValue)")
                         renderer.rotate(Float(newValue.radians))
                     }
                 
@@ -66,13 +64,8 @@ struct ContentView: View {
                     Spacer()
                     HStack {
                         Button("应用裁剪") {
-                           let screenToMetalMartrix = Martrix.screenToMetalMartrix(geometry.size)
-                            let leftTop = screenToMetalMartrix * SIMD3<Float>(Float(cropRect.origin.x), Float(cropRect.origin.y), 1)
-                            let bottomRight = screenToMetalMartrix * SIMD3<Float>(Float(cropRect.maxX), Float(cropRect.maxY), 1)
-                            renderer.crop(
-                                CGRect(origin: CGPoint(x: CGFloat(leftTop.x), y: CGFloat(leftTop.y)),
-                                       size: CGSize(width: CGFloat(bottomRight.x - leftTop.x),
-                                                    height: CGFloat(leftTop.y - bottomRight.y))),
+                            renderer.newCrop(
+                                cropRect,
                                 completion: { success in
                                     if success {
                                         renderer.display(in: CGSize(width: geometry.size.width - 20, height: geometry.size.width - 20).sizeInMetal)
@@ -85,15 +78,6 @@ struct ContentView: View {
                         .background(Color.black.opacity(0.6))
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                    }
-                    
-                    HStack {
-                        Button("deltaX: + 0.1") {
-                            renderer.pan(deltaX: 0.1, deltaY: 0)
-                        }
-                        Button("deltaY: + 0.1") {
-                            renderer.pan(deltaX: 0, deltaY: 0.1)
-                        }
                     }
                 }
             }
