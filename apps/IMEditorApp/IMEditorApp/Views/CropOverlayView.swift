@@ -253,12 +253,12 @@ struct CropOverlayView: View {
                         }
                 )
             )
-//            .gesture(
-//                RotateGesture()
-//                .onChanged { value in
-//                    self.rotationAngle = value.rotation
-//                }
-//            )
+            .gesture(
+                RotateGesture()
+                .onChanged { value in
+                    self.rotationAngle = value.rotation
+                }
+            )
     }
     
     fileprivate func cropArea() -> some View {

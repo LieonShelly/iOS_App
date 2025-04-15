@@ -35,22 +35,29 @@ class CropRender: MetalRenderer {
         // ⬇️ 模型变换：缩放、旋转、平移
         let scaleX = Float(displayWidth) * scale
         let scaleY = Float(displayHeight) * scale
-        let scaleMatrix = Martrix.scaleMartrix(scaleX: scaleX, scaleY: scaleY)
-        let rotationMatrix = Martrix.rotationMartrix(angle)
-        let translationMatrix = Martrix.translationMartrix(tx: offsetX, ty: offsetY)
+        let scaleMatrix = float4x4(scaleX: scaleX, scaleY: scaleY)
+        let translationMatrix = float4x4(translationX: offsetX, translationY: offsetY)
+        let rotationMatrix = float4x4(rotationAngle: angle)
         let modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
         
         // ⬇️ 正交投影矩阵：从屏幕空间映射到 Metal 的 NDC 空间（-1 ~ 1）
-        let projectionMatrix = float3x3(orthographic: CGRect(x: 0, y: 0, width: viewSize.width, height: viewSize.height), near: -1, far: 1)
+        let projectionMatrix = float4x4(
+            orthographicLeft: -Float(viewSize.width) / 2,
+            right: Float(viewSize.width) / 2,
+            bottom: -Float(viewSize.height) / 2,
+            top: Float(viewSize.height) / 2,
+            near: -1,
+            far: 1
+        )
         let transform = projectionMatrix * modelMatrix
         
         let halfW: Float = 0.5
         let halfH: Float = 0.5
         
-        let topLeft = transform * SIMD3<Float>(-halfW,  halfH, 1)
-        let bottomLeft = transform * SIMD3<Float>(-halfW, -halfH, 1)
-        let bottomRight = transform * SIMD3<Float>( halfW, -halfH, 1)
-        let topRight = transform * SIMD3<Float>( halfW,  halfH, 1)
+        let topLeft = transform * SIMD4<Float>(-halfW,  halfH, 0, 1)
+        let bottomLeft = transform * SIMD4<Float>(-halfW, -halfH, 0, 1)
+        let bottomRight = transform * SIMD4<Float>( halfW, -halfH, 0, 1)
+        let topRight = transform * SIMD4<Float>( halfW,  halfH, 0, 1)
        
         currentVertices = [
             CGPoint(x: CGFloat(topLeft.x), y: CGFloat(topLeft.y)),

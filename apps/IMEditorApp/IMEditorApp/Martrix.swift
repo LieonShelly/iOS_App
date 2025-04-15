@@ -111,14 +111,80 @@ extension float3x3 {
     }
     
     init(orthographic rect: CGRect, near: Float, far: Float) {
-      let left = Float(rect.origin.x)
-      let right = Float(rect.origin.x + rect.width)
-      let top = Float(rect.origin.y)
-      let bottom = Float(rect.origin.y - rect.height)
-      let X = float3(2 / (right - left), 0, 0)
-      let Y = float3(0, 2 / (top - bottom), 0)
-      let Z = float3(0, 0, 1 / (far - near))
+        let left = Float(rect.origin.x)
+        let right = Float(rect.origin.x + rect.width)
+        let top = Float(rect.origin.y)
+        let bottom = Float(rect.origin.y - rect.height)
+        let X = float3(2 / (right - left), 0, 0)
+        let Y = float3(0, 2 / (top - bottom), 0)
+        let Z = float3(0, 0, 1 / (far - near))
+        let W = float4(
+            (left + right) / (left - right),
+            (top + bottom) / (bottom - top),
+            near / (near - far),
+            1)
       self.init()
       columns = (X, Y, Z)
     }
+}
+
+
+extension float4x4 {
+    init(orthographic rect: CGRect, near: Float, far: Float) {
+        let left = Float(rect.origin.x)
+        let right = Float(rect.origin.x + rect.width)
+        let top = Float(rect.origin.y)
+        let bottom = Float(rect.origin.y - rect.height)
+        let X = float4(2 / (right - left), 0, 0, 0)
+        let Y = float4(0, 2 / (top - bottom), 0, 0)
+        let Z = float4(0, 0, 1 / (far - near), 0)
+        let W = float4(
+          (left + right) / (left - right),
+          (top + bottom) / (bottom - top),
+          near / (near - far),
+          1)
+        self.init()
+        columns = (X, Y, Z, W)
+    }
+    
+    init(orthographicLeft: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float) {
+        let X = float4(2 / (right - orthographicLeft), 0, 0, 0)
+        let Y = float4(0, 2 / (top - bottom), 0, 0)
+        let Z = float4(0, 0, 1 / (far - near), 0)
+        let W = float4(
+          (orthographicLeft + right) / (orthographicLeft - right),
+          (top + bottom) / (bottom - top),
+          near / (near - far),
+          1)
+        self.init()
+        columns = (X, Y, Z, W)
+    }
+    
+    init(scaleX: Float, scaleY: Float) {
+        self = float4x4(
+            [scaleX, 0, 0, 0],
+            [0, scaleY, 0, 0],
+            [0,     0,  1, 0],
+            [0,     0,  1,  1]
+        )
+    }
+    
+    init(translationX: Float, translationY: Float) {
+        self = float4x4(
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [translationX, translationY, 0, 1]
+        )
+    }
+    
+    init(rotationAngle: Float) {
+        self = float4x4(rows: [
+            float4(cos(rotationAngle), -sin(rotationAngle), 0, 0),
+            float4(sin(rotationAngle), cos(rotationAngle), 0, 0),
+            float4(0, 0, 1, 0),
+            float4(0, 0, 0, 1),
+        ])
+    }
+    
 }
