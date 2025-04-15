@@ -29,16 +29,16 @@ struct ContentView: View {
                         imageFrame = renderer.getImageFrame(in: geometry.size)
                         cropRect = imageFrame
                     })
-                    .onChange(of: scale) { newValue in
+                    .onChange(of: scale) {_, newValue in
                         // 计算缩放因子 - 确保1.0是无缩放状态
                         let scaleFactor = Float(newValue)
                         renderer.zoom(factor: scaleFactor)
                     }
-                    .onChange(of: translation) { newValue in
+                    .onChange(of: translation) {_, newValue in
                         let offset = SIMD3<Float>(Float(CGFloat(newValue.x ) *  UIScreen.main.nativeScale), Float(CGFloat(-newValue.y) *  UIScreen.main.nativeScale), 1)
                         renderer.pan(deltaX: offset.x, deltaY: offset.y)
                     }
-                    .onChange(of: rotationAngle) { newValue in
+                    .onChange(of: rotationAngle) {_,  newValue in
                         print("rotationAngle: \(newValue)")
                         renderer.rotate(Float(newValue.radians))
                     }
@@ -49,7 +49,7 @@ struct ContentView: View {
                         CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle)
                     )
                     .allowsHitTesting(true)
-                    .onChange(of: cropRect) { newRect in
+                    .onChange(of: cropRect) {_,  newRect in
                         let boundedRect = CGRect(
                             x: max(imageFrame.minX, min(newRect.minX, imageFrame.maxX - newRect.width)),
                             y: max(imageFrame.minY, min(newRect.minY, imageFrame.maxY - newRect.height)),

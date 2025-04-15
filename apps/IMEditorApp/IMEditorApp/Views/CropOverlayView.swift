@@ -232,32 +232,32 @@ struct CropOverlayView: View {
             .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
             .gesture(
                 SimultaneousGesture(
-                    DragGesture()
-                        .onChanged { value in
-                            if let last = lastDragLocation {
-                                let delta = CGPoint(x: value.location.x - last.x, y: value.location.y - last.y)
-                                self.translation = delta
+                    SimultaneousGesture(
+                        DragGesture()
+                            .onChanged { value in
+                                if let last = lastDragLocation {
+                                    let delta = CGPoint(x: value.location.x - last.x, y: value.location.y - last.y)
+                                    self.translation = delta
+                                }
+                                lastDragLocation = value.location
                             }
-                            lastDragLocation = value.location
-                        }
-                        .onEnded { value in
-                            lastDragLocation = nil
-                        },
-                    MagnificationGesture()
-                        .onChanged { scale in
-                            let adjustedScale = 1.0 + (scale - 1.0) * 0.5
-                            self.scale = adjustedScale
-                        }
-                        .onEnded { _ in
-                            self.scale = 1.0
-                        }
+                            .onEnded { value in
+                                lastDragLocation = nil
+                            },
+                        MagnificationGesture()
+                            .onChanged { scale in
+                                let adjustedScale = 1.0 + (scale - 1.0) * 0.5
+                                self.scale = adjustedScale
+                            }
+                            .onEnded { _ in
+                                self.scale = 1.0
+                            }
+                    ),
+                    RotateGesture()
+                    .onChanged { value in
+                        self.rotationAngle = value.rotation
+                    }
                 )
-            )
-            .gesture(
-                RotateGesture()
-                .onChanged { value in
-                    self.rotationAngle = value.rotation
-                }
             )
     }
     
