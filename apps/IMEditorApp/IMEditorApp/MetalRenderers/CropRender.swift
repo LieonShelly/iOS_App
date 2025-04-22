@@ -10,6 +10,7 @@ import CoreImage
 import ImageIO
 import UniformTypeIdentifiers
 import simd
+import SwiftUI
 
 class CropRender: MetalRenderer {
     var scale: Float = 1
@@ -17,8 +18,13 @@ class CropRender: MetalRenderer {
     var offsetY: Float = 0.0
     var isCropped: Bool = false
     var angle: Float = 0.0
+    var isHorizonMirror: Bool = false
     var modelMatrix: float4x4 = .identity
-  
+    var viewMatrix: float4x4 = .identity
+    var perspective: float4x4 = .identity
+    var shearX: Float = 1
+    var angleY: Float = 0
+    var angleX: Float = 0
     
     func zoom(factor: Float) {
         let newScale = scale * factor
@@ -29,7 +35,6 @@ class CropRender: MetalRenderer {
     }
     
     func pan(deltaX: Float, deltaY: Float) {
-        print("deltaX:\(deltaX) - deltaY:\(deltaY)")
         let sensitivityFactor = 1.0 / scale
         
         let adjustedDeltaX = deltaX * sensitivityFactor
@@ -41,8 +46,27 @@ class CropRender: MetalRenderer {
     }
     
     func rotate(_ angleRadians: Float) {
-        self.angle += angleRadians
+        self.angle = angleRadians
         updateVertices()
+    }
+    
+    func rotateY(_ angleRadians: Float) {
+        self.angleY = angleRadians
+        updateVertices()
+    }
+    
+    func rotateX(_ angleRadians: Float) {
+        self.angleX = angleRadians
+        updateVertices()
+    }
+    
+    func mirror() {
+        self.isHorizonMirror = !isHorizonMirror
+        updateVertices()
+    }
+    
+    func shear(xAngle: Float) {
+        self.shearX = xAngle
     }
     
     func resetTransform() {
@@ -54,34 +78,34 @@ class CropRender: MetalRenderer {
     private func updateVertices() {
         guard let texture = texture else { return }
         let imageSize = CGSize(width: texture.width, height: texture.height)
-        let viewSize = displaySize != .zero ?
-        displaySize :
-        CGSize(width: canvasSize.width * UIScreen.main.nativeScale, height: canvasSize.height * UIScreen.main.nativeScale)
+        let viewSize = metalView.drawableSize
         setupVertices(for: imageSize, in: viewSize)
     }
     
-    
     override func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
         super.setupVertices(for: imageSize, in: viewSize)
-        
-        // ⬇️ 模型变换：缩放、旋转、平移
-        let scaleMatrix = float4x4(scaleX: scale, scaleY: scale)
-        let translationMatrix = float4x4(translationX: offsetX, translationY: offsetY)
-        let rotationMatrix = float4x4(rotationAngle: angle)
-        self.modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
-        
-        // ⬇️ 正交投影矩阵：从屏幕空间映射到 Metal 的 NDC 空间（-1 ~ 1）
         let viewAspect = Float(viewSize.width / viewSize.height)
-        let projectionMatrix = float4x4(
-            orthographicLeft:  -viewAspect,
-            right: viewAspect,
-            bottom: -1.0,
-            top: 1,
-            near: -1,
-            far: 1
-        )
-        uniforms.transform = projectionMatrix * modelMatrix
+        // ⬇️ 模型变换：缩放、旋转、平移
+        let translation = float4x4(translationX: offsetX, translationY: offsetY)
+        let scaleMatrix = float4x4(scaleX: scale, scaleY: scale)
+        let zRotationMatrix = float4x4(angleZ: angle)
+        let yRotationMatrix = float4x4(angleY: angleY)
+        let XRotationMatrix = float4x4(angleX: angleX)
+        let rotationMatrix = zRotationMatrix * yRotationMatrix * XRotationMatrix
+        let mirrorMatrix = float4x4(mirrorX: isHorizonMirror, mirrorY: false)
 
+        self.modelMatrix = rotationMatrix * scaleMatrix * translation * mirrorMatrix
+        
+        // 摄像机矩阵
+        self.viewMatrix = float4x4(translationX: 0, translationY: 0, translationZ: -2).inverse
+       
+        // 投影矩阵
+        perspective = float4x4(perspectiveFov: Float(Angle(degrees: 70).radians), aspect: viewAspect, near: 0.01, far: 100)
+        
+        uniforms.transform = perspective * viewMatrix * modelMatrix
+        
+        let metalPoint = currentVertices.map { uniforms.transform * SIMD4<Float>(Float($0.x), Float($0.y), 0, 1) }
+        print("after transform metalPoint:\(metalPoint)")
     }
     
     func newCrop(_ cropRectInView: CGRect, completion: @escaping (Bool) -> Void) {
@@ -92,20 +116,27 @@ class CropRender: MetalRenderer {
                                     height: cropRectInView.height * UIScreen.main.nativeScale)
         
         // 1. 将 cropRect 从 UIKit 坐标转换为 Metal 坐标中心为 (0,0)
-        let viewAspect = Float(viewSize.width / viewSize.height)
-        let cropLeft = (Float(cropRectInView.minX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
-        let cropRight = (Float(cropRectInView.maxX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
-        let cropTop = (1.0 - Float(cropRectInView.minY) / Float(viewSize.height)) * 2.0 - 1.0
-        let cropBottom = (1.0 - Float(cropRectInView.maxY) / Float(viewSize.height)) * 2.0 - 1.0
+        let viewAspect: Float = Float(viewSize.width / viewSize.height)
+        let imageAspect = Float(imageSize.width / imageSize.height)
+        var cropLeft = (Float(cropRectInView.minX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
+        var cropRight = (Float(cropRectInView.maxX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
+        var cropTop = (1.0 - Float(cropRectInView.minY) / Float(viewSize.height)) * 2.0 - 1.0
+        var cropBottom = (1.0 - Float(cropRectInView.maxY) / Float(viewSize.height)) * 2.0 - 1.0
 
-        
+        if imageAspect > viewAspect {
+            cropLeft = (Float(cropRectInView.minX) / Float(viewSize.width)) * 2.0 - 1.0
+            cropRight = (Float(cropRectInView.maxX) / Float(viewSize.width)) * 2.0 - 1.0
+            cropTop = (1.0 - Float(cropRectInView.minY) / Float(viewSize.height)) * 2.0 * (1.0 / viewAspect) - (1.0 / viewAspect)
+            cropBottom = (1.0 - Float(cropRectInView.maxY) / Float(viewSize.height)) * 2.0 * (1.0 / viewAspect) - (1.0 / viewAspect)
+
+        }
         let cropProjection = float4x4(orthographicLeft: cropLeft, right: cropRight, bottom: cropBottom, top: cropTop, near: -1, far: 1)
         var cropTransform = cropProjection * modelMatrix
         
         
         // 2. 创建裁剪目标纹理
-        let cropPixelWidth = Int(cropRectInView.size.width * UIScreen.main.scale)
-        let cropPixelHeight = Int(cropRectInView.size.height * UIScreen.main.scale)
+        let cropPixelWidth = Int(cropRectInView.size.width)
+        let cropPixelHeight = Int(cropRectInView.size.height)
         
         let outputDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm,
                                                                   width: cropPixelWidth,
@@ -113,15 +144,20 @@ class CropRender: MetalRenderer {
                                                                   mipmapped: false)
         outputDesc.usage = [.renderTarget, .shaderRead, .shaderWrite]
         guard let outputTexture = device.makeTexture(descriptor: outputDesc) else {
+            completion(false)
             return
         }
         
-        guard let renderPassDescriptor = makeRenderPassDescriptor(for: outputTexture) else { return  }
+        guard let renderPassDescriptor = makeRenderPassDescriptor(for: outputTexture) else { 
+            completion(false)
+            return  
+        }
 
 
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
         else {
+            completion(false)
             return
         }
         
@@ -135,10 +171,10 @@ class CropRender: MetalRenderer {
                                       indexBuffer: indexBuffer,
                                       indexBufferOffset: 0)
         encoder.endEncoding()
-        self.saveTextureToFile(texture!, filename: "source.png")
+        
         commandBuffer.addCompletedHandler { _ in
-            self.saveTextureToFile(outputTexture, filename: "out.png")
-            
+            self.saveTextureToFile(outputTexture, filename: "cropped.png")
+            completion(true)
         }
         
         commandBuffer.commit()

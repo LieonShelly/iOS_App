@@ -9,7 +9,7 @@ import simd
 import Foundation
 import CoreGraphics
 
-enum Martrix {
+enum Matrix {
     static func screenToMetalMartrix(_ screenSize: CGSize) -> float3x3 {
          let sx = 2.0 / Float(screenSize.width)
          let sy = -2.0 / Float(screenSize.height)
@@ -136,10 +136,10 @@ extension float4x4 {
         let right = Float(rect.origin.x + rect.width)
         let top = Float(rect.origin.y)
         let bottom = Float(rect.origin.y - rect.height)
-        let X = float4(2 / (right - left), 0, 0, 0)
-        let Y = float4(0, 2 / (top - bottom), 0, 0)
-        let Z = float4(0, 0, 1 / (far - near), 0)
-        let W = float4(
+        let X = SIMD4<Float>(2 / (right - left), 0, 0, 0)
+        let Y = SIMD4<Float>(0, 2 / (top - bottom), 0, 0)
+        let Z = SIMD4<Float>(0, 0, 1 / (far - near), 0)
+        let W = SIMD4<Float>(
           (left + right) / (left - right),
           (top + bottom) / (bottom - top),
           near / (near - far),
@@ -149,10 +149,10 @@ extension float4x4 {
     }
     
     init(orthographicLeft: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float) {
-        let X = float4(2 / (right - orthographicLeft), 0, 0, 0)
-        let Y = float4(0, 2 / (top - bottom), 0, 0)
-        let Z = float4(0, 0, 1 / (far - near), 0)
-        let W = float4(
+        let X = SIMD4<Float>(2 / (right - orthographicLeft), 0, 0, 0)
+        let Y = SIMD4<Float>(0, 2 / (top - bottom), 0, 0)
+        let Z = SIMD4<Float>(0, 0, 1 / (far - near), 0)
+        let W = SIMD4<Float>(
           (orthographicLeft + right) / (orthographicLeft - right),
           (top + bottom) / (bottom - top),
           near / (near - far),
@@ -160,6 +160,7 @@ extension float4x4 {
         self.init()
         columns = (X, Y, Z, W)
     }
+    
     
     init(scaleX: Float, scaleY: Float) {
         self = float4x4(
@@ -179,16 +180,148 @@ extension float4x4 {
         )
     }
     
+    init(translationX: Float, translationY: Float, translationZ: Float) {
+        self = float4x4(
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [translationX, translationY, translationZ, 1]
+        )
+    }
+    
     init(rotationAngle: Float) {
         self = float4x4(rows: [
-            float4(cos(rotationAngle), -sin(rotationAngle), 0, 0),
-            float4(sin(rotationAngle), cos(rotationAngle), 0, 0),
-            float4(0, 0, 1, 0),
-            float4(0, 0, 0, 1),
+            SIMD4<Float>(cos(rotationAngle), -sin(rotationAngle), 0, 0),
+            SIMD4<Float>(sin(rotationAngle), cos(rotationAngle), 0, 0),
+            SIMD4<Float>(0, 0, 1, 0),
+            SIMD4<Float>(0, 0, 0, 1),
         ])
     }
     
     static var identity: float4x4 {
         return matrix_identity_float4x4
     }
+    
+    init(mirrorX: Bool, mirrorY: Bool) {
+        let scaleX: Float = mirrorX ? -1 : 1
+        let scaleY: Float = mirrorY ? -1 : 1
+        self.init()
+        let X = SIMD4<Float>(scaleX, 0.0, 0.0, 0.0)
+        let Y = SIMD4<Float>(0, scaleY, 0.0, 0.0)
+        let Z = SIMD4<Float>(0, 0.0, 1.0, 0.0)
+        let W = SIMD4<Float>(0, 0.0, 0.0, 1.0)
+        self.init()
+        columns =  (
+            X, Y, Z, W
+        )
+    }
+    
+    init(shearX: Float, shearY: Float) {
+        let X = SIMD4<Float>(1, shearX, 0, 0)
+        let Y = SIMD4<Float>(shearY, 1, 0, 0)
+        let Z = SIMD4<Float>(0, 0.0, 1.0, 0.0)
+        let W = SIMD4<Float>(0, 0.0, 0.0, 1.0)
+        self.init()
+        columns =  (
+            X, Y, Z, W
+        )
+    }
+    
+    
+    
+}
+
+
+extension float4x4 {
+    init(angleZ: Float) {
+        let cosA = cos(angleZ)
+        let sinA = sin(angleZ)
+        self.init()
+        columns = (
+            SIMD4<Float>(cosA, -sinA, 0, 0),
+            SIMD4<Float>(sinA, cosA, 0, 0),
+            SIMD4<Float>(0, 0, 1, 0),
+            SIMD4<Float>(0, 0, 0, 1)
+        )
+    }
+    
+    init(perspectiveFov fov: Float, aspect: Float, near: Float, far: Float, lhs: Bool = true) {
+        let yScale = 1 / tan(fov * 0.5)
+        let xScale = yScale / aspect
+        let zRange = far - near
+        let zScale = far / zRange
+        let wz = -near * far / zRange
+        
+        self.init(columns: (
+            SIMD4<Float>(xScale, 0,      0,   0),
+            SIMD4<Float>(0,      yScale, 0,   0),
+            SIMD4<Float>(0,      0,      zScale, 1),
+            SIMD4<Float>(0,      0,      wz,   0)
+        ))
+    }
+    
+    static func makePerspectiveCropMatrix(cropRect: CGRect, near: Float, far: Float) -> float4x4 {
+        // 裁剪区域的缩放和平移（NDC -> crop rect）
+          let scaleX = 2.0 / Float(cropRect.width)
+          let scaleY = 2.0 / Float(cropRect.height)
+          let offsetX = -(Float(cropRect.midX) * scaleX)
+          let offsetY = -(Float(cropRect.midY) * scaleY)
+          
+          // 注意：顺序是先缩放再平移
+          let scaleMatrix = float4x4(columns: (
+              SIMD4<Float>(scaleX, 0, 0, 0),
+              SIMD4<Float>(0, scaleY, 0, 0),
+              SIMD4<Float>(0, 0, 1, 0),
+              SIMD4<Float>(0, 0, 0, 1)
+          ))
+          
+          let translationMatrix = float4x4(columns: (
+              SIMD4<Float>(1, 0, 0, 0),
+              SIMD4<Float>(0, 1, 0, 0),
+              SIMD4<Float>(0, 0, 1, 0),
+              SIMD4<Float>(offsetX, offsetY, 0, 1)
+          ))
+          
+          return scaleMatrix * translationMatrix
+    }
+    
+    init(eye: float3, center: float3, up: float3) {
+      let z = normalize(center - eye)
+      let x = normalize(cross(up, z))
+      let y = cross(z, x)
+
+      let X = float4(x.x, y.x, z.x, 0)
+      let Y = float4(x.y, y.y, z.y, 0)
+      let Z = float4(x.z, y.z, z.z, 0)
+      let W = float4(-dot(x, eye), -dot(y, eye), -dot(z, eye), 1)
+
+      self.init()
+      columns = (X, Y, Z, W)
+    }
+
+    
+    init(angleY: Float) {
+        let cosA = cos(angleY)
+        let sinA = sin(angleY)
+        self.init()
+        columns = (
+            SIMD4<Float>(cosA, 0, -sinA, 0),
+            SIMD4<Float>(0, 1, 0, 0),
+            SIMD4<Float>(sinA, 0, cosA, 0),
+            SIMD4<Float>(0, 0, 0, 1)
+        )
+    }
+    
+    init(angleX: Float) {
+        let cosA = cos(angleX)
+        let sinA = sin(angleX)
+        self.init()
+        columns = (
+            SIMD4<Float>(1, 0, 0, 0),
+            SIMD4<Float>(0, cosA, -sinA, 0),
+            SIMD4<Float>(0, sinA, cosA, 0),
+            SIMD4<Float>(0, 0, 0, 1)
+        )
+    }
+    
 }

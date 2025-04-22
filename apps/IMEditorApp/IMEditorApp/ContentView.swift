@@ -16,71 +16,88 @@ struct ContentView: View {
     @State private var imageFrame: CGRect = .zero
     @State private var debounceItem: DispatchWorkItem?
     @State private var rotationAngle: Angle = .zero
+    @StateObject private var menuViewModel: ClippingMenuViewModel = .init()
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // 图像视图 (底层)
-                MetalImageView(renderer: renderer)
-                    .onAppear(perform: {
-                        renderer.updateCanvasSize(geometry.size.sizeInMetal)
-                        renderer.loadTexture()
-                        renderer.display(in: CGSize(width: geometry.size.width - 20, height: geometry.size.height - 20).sizeInMetal)
-                        imageFrame = renderer.getImageFrame(in: geometry.size)
-                        cropRect = imageFrame
-                    })
-                    .onChange(of: scale) {_, newValue in
-                        let scaleFactor = Float(newValue)
-                        renderer.zoom(factor: scaleFactor)
-                    }
-                    .onChange(of: translation) {_, newValue in
-                        let offset = SIMD3<Float>(Float(CGFloat(newValue.x / geometry.size.width)), -Float(CGFloat(newValue.y / geometry.size.height)), 1)
-                        renderer.pan(deltaX: offset.x, deltaY: offset.y)
-                    }
-                    .onChange(of: rotationAngle) {_,  newValue in
-                        renderer.rotate(Float(newValue.radians))
-                    }
+                renderView(geometry)
                 
                 // 裁剪框层 (固定位置)
-                Color.clear
-                    .overlay(
-                        CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle)
-                    )
-                    .allowsHitTesting(true)
-                    .onChange(of: cropRect) {_,  newRect in
-                        let boundedRect = CGRect(
-                            x: max(imageFrame.minX, min(newRect.minX, imageFrame.maxX - newRect.width)),
-                            y: max(imageFrame.minY, min(newRect.minY, imageFrame.maxY - newRect.height)),
-                            width: min(newRect.width, imageFrame.width),
-                            height: min(newRect.height, imageFrame.height)
-                        )
-                        if boundedRect != newRect {
-                            cropRect = boundedRect
-                        }
-                    }
+                cropView(geometry)
                 
                 // 控制按钮 (顶层)
-                VStack {
-                    Spacer()
-                    HStack {
-                        Button("应用裁剪") {
-                            renderer.newCrop(
-                                cropRect,
-                                completion: { success in
-                                    if success {
-                                        renderer.display(in: CGSize(width: geometry.size.width - 20, height: geometry.size.width - 20).sizeInMetal)
-                                        imageFrame = renderer.getImageFrame(in: geometry.size)
-                                        cropRect = imageFrame
-                                    }
-                                })
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.6))
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
+                menuView(geometry)
+            }
+        }
+    }
+    
+    
+    func renderView(_ geometry: GeometryProxy) -> some View {
+        MetalImageView(renderer: renderer)
+            .onAppear(perform: {
+                renderer.loadTexture()
+                renderer.display(in: geometry.size.sizeInMetal)
+                imageFrame = renderer.getImageFrame(in: geometry.size)
+                cropRect = imageFrame
+                menuViewModel.didUpdateProgress = { index, progress in
+                    switch index {
+                    case 0: renderer.rotate((-Float.pi + 2 * Float.pi * Float(progress)))
+                    case 1: renderer.rotateY((-Float.pi + 2 * Float.pi * Float(progress)))
+                    case 2: renderer.rotateX((-Float.pi + 2 * Float.pi * Float(progress)))
+                    default: break
                     }
                 }
+                
+            })
+            .onChange(of: scale) {_, newValue in
+                let scaleFactor = Float(newValue)
+                renderer.zoom(factor: scaleFactor)
             }
+            .onChange(of: translation) {_, newValue in
+                let offset = SIMD3<Float>(Float(CGFloat(newValue.x / geometry.size.width)), -Float(CGFloat(newValue.y / geometry.size.height)), 1)
+                renderer.pan(deltaX: offset.x, deltaY: offset.y)
+            }
+            .onChange(of: rotationAngle) {_,  newValue in
+                renderer.rotate(Float(newValue.radians))
+            }
+    }
+    
+    func cropView(_ geometry: GeometryProxy) -> some View {
+        Color.clear
+            .overlay(
+                CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle)
+            )
+            .allowsHitTesting(true)
+            .onChange(of: cropRect) {_,  newRect in
+                let boundedRect = CGRect(
+                    x: max(imageFrame.minX, min(newRect.minX, imageFrame.maxX - newRect.width)),
+                    y: max(imageFrame.minY, min(newRect.minY, imageFrame.maxY - newRect.height)),
+                    width: min(newRect.width, imageFrame.width),
+                    height: min(newRect.height, imageFrame.height)
+                )
+                if boundedRect != newRect {
+                    cropRect = boundedRect
+                }
+            }
+    }
+    
+    func menuView(_ geometry: GeometryProxy) -> some View {
+        VStack {
+            HStack {
+                Spacer()
+                Image(systemName: "square.and.arrow.down.fill")
+                    .foregroundStyle(AppColor.primary)
+                    .onTapGesture {
+                        renderer.newCrop(cropRect) { result in
+                            
+                        }
+                    }
+            }
+            .padding(.horizontal, 20)
+            Spacer()
+            ClippingMenu(viewModel: menuViewModel)
         }
     }
 }

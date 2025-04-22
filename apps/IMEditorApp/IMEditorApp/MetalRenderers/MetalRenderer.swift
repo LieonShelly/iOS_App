@@ -20,9 +20,8 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     var texture: MTLTexture?
     let metalView: MTKView
     var currentVertices: [CGPoint] = []
-    var canvasSize: CGSize = .zero
     var imageSize: CGSize = .zero
-    var displaySize: CGSize = .zero
+    
     var uniforms: Uniforms = .init(transform: .identity)
     
     override init() {
@@ -35,10 +34,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
         metalView.delegate = self
         setupPipeline(metalView)
 
-    }
-    
-    func updateCanvasSize(_ size: CGSize) {
-        self.canvasSize = CGSize(width: size.width, height: size.height)
     }
     
     func setupPipeline(_ view: MTKView) {
@@ -80,7 +75,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     }
     
     func loadTexture() {
-        guard let image = UIImage(named: "test.png")?.cgImage else {
+        guard let image = UIImage(named: "pexels-pixabay-531321.png")?.cgImage else {
             print("Failed to load test.png")
             return
         }
@@ -100,7 +95,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     func display(in viewSize: CGSize) {
         guard let texture else { return }
         let imageSize = CGSize(width: texture.width, height: texture.height)
-        self.displaySize = viewSize
         setupVertices(for: imageSize, in: viewSize)
     }
     
@@ -111,7 +105,10 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
 
         let commandBuffer = commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
-        
+        commandEncoder?.setViewport(MTLViewport(originX: 0, originY: 0,
+                                                width: Double(view.drawableSize.width),
+                                              height: Double(view.drawableSize.height),
+                                              znear: 0, zfar: 1))
         commandEncoder?.setRenderPipelineState(pipelineState)
         commandEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         commandEncoder?.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
@@ -126,9 +123,26 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     }
     
     func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
+        print("setupVertices-imageSize:\(imageSize) - viewSize:\(viewSize)")
         let imageAspect = Float(imageSize.width / imageSize.height)
-        let halfH: Float = 0.8
-        let halfW: Float = 0.8 * imageAspect  // 宽 = 高 * 宽高比
+        let viewAspect = Float(viewSize.width / viewSize.height)
+
+        // 在 Metal 坐标系下，View 是 [-1, 1]，我们用这个范围来计算图像显示区域
+        var displayWidth: Float = 0
+        var displayHeight: Float = 0
+
+        if imageAspect > viewAspect {
+            // 图像比视图宽 → 宽度对齐
+            displayWidth = 2.0 // Metal 的 [-1, 1] 范围是 2 个单位宽
+            displayHeight = displayWidth / imageAspect
+        } else {
+            // 图像比视图高 → 高度对齐
+            displayHeight = 2.0
+            displayWidth = displayHeight * imageAspect
+        }
+
+        let halfW = displayWidth / 2.0
+        let halfH = displayHeight / 2.0
 
         let transform: float4x4 = .identity
 
@@ -151,7 +165,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
             topRight.x,    topRight.y,    1.0, 0.0
         ]
 
-        print(quadVertices)
+        print("quadVertices:\(currentVertices)")
         
         let indices: [UInt16] = [ 0, 1, 2,  2, 3, 0 ]  // 三角形索引
 
@@ -160,10 +174,14 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     }
 
     func getImageFrame(in viewSize: CGSize) -> CGRect {
-        let screenVertices = currentVertices.map { vertex in
+        let metalPoint = currentVertices.map { uniforms.transform * SIMD4<Float>(Float($0.x), Float($0.y), 0, 1) }
+            .map { vertex in
+                SIMD4<Float>(vertex.x / vertex.w, vertex.y / vertex.w, vertex.z / vertex.w, vertex.w / vertex.w)
+            }
+        let screenVertices = metalPoint.map { vertex in
             CGPoint(
-                x: (vertex.x + 1) * viewSize.width / 2,
-                y: (1 - vertex.y) * viewSize.height / 2
+                x: (CGFloat(vertex.x) + 1) * viewSize.width / 2,
+                y: (1 - CGFloat(vertex.y)) * viewSize.height / 2
             )
         }
         
