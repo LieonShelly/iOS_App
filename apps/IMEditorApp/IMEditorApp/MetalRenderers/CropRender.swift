@@ -96,13 +96,21 @@ class CropRender: MetalRenderer {
 
         self.modelMatrix = rotationMatrix * scaleMatrix * translation * mirrorMatrix
         
-        // 摄像机矩阵
-        self.viewMatrix = float4x4(translationX: 0, translationY: 0, translationZ: -2).inverse
-       
-        // 投影矩阵
-        perspective = float4x4(perspectiveFov: Float(Angle(degrees: 70).radians), aspect: viewAspect, near: 0.01, far: 100)
-        
-        uniforms.transform = perspective * viewMatrix * modelMatrix
+        let imageAspect = Float(imageSize.width / imageSize.height)
+        var cropLeft: Float = -1 * viewAspect
+        var cropRight: Float = 1 * viewAspect
+        var cropTop: Float = 1
+        var cropBottom: Float = -1
+
+        if imageAspect > viewAspect {
+            cropLeft = -1
+            cropRight = 1
+            cropTop =  (1.0 / viewAspect)
+            cropBottom = -(1.0 / viewAspect)
+
+        }
+        let cropProjection = float4x4(orthographicLeft: cropLeft, right: cropRight, bottom: cropBottom, top: cropTop, near: -1, far: 1)
+        uniforms.transform = cropProjection * modelMatrix
         
         let metalPoint = currentVertices.map { uniforms.transform * SIMD4<Float>(Float($0.x), Float($0.y), 0, 1) }
         print("after transform metalPoint:\(metalPoint)")
