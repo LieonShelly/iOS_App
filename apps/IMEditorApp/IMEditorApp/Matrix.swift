@@ -285,18 +285,23 @@ extension float4x4 {
           return scaleMatrix * translationMatrix
     }
     
-    init(eye: float3, center: float3, up: float3) {
-      let z = normalize(center - eye)
-      let x = normalize(cross(up, z))
-      let y = cross(z, x)
-
-      let X = float4(x.x, y.x, z.x, 0)
-      let Y = float4(x.y, y.y, z.y, 0)
-      let Z = float4(x.z, y.z, z.z, 0)
-      let W = float4(-dot(x, eye), -dot(y, eye), -dot(z, eye), 1)
-
-      self.init()
-      columns = (X, Y, Z, W)
+    init(eye: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) {
+        let z = normalize(center - eye)
+        let x = normalize(cross(up, z))
+        let y = cross(z, x)
+        let translation = SIMD3<Float>(
+            -dot(x, eye),
+            -dot(y, eye),
+            -dot(z, eye)
+        )
+        
+        let X = SIMD4<Float>(x.x, y.x, z.x, 0)
+        let Y = SIMD4<Float>(x.y, y.y, z.y, 0)
+        let Z = SIMD4<Float>(x.z, y.z, z.z, 0)
+        let W = SIMD4<Float>(translation.x, translation.y, translation.z, 1)
+        
+        self.init()
+        columns = (X, Y, Z, W)
     }
 
     
