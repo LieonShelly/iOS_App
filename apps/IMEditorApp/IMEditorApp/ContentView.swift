@@ -94,6 +94,13 @@ struct ContentView: View {
                             
                         }
                     }
+                
+                Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+                    .foregroundStyle(AppColor.primary)
+                    .onTapGesture {
+                        renderer.resetTransform()
+                    }
+                
             }
             .padding(.horizontal, 20)
             Spacer()

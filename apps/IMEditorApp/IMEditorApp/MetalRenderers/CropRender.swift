@@ -73,6 +73,10 @@ class CropRender: MetalRenderer {
         scale = 1.0
         offsetX = 0.0
         offsetY = 0.0
+        angle = 0.0
+        angleX = 0.0
+        angleY = 0
+        updateVertices()
     }
     
     private func updateVertices() {
