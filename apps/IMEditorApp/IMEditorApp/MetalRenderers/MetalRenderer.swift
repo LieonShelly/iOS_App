@@ -75,7 +75,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     }
     
     func loadTexture() {
-        guard let image = UIImage(named: "pexels-pixabay-531321.png")?.cgImage else {
+        guard let image = UIImage(named: "test.png")?.cgImage else {
             print("Failed to load test.png")
             return
         }

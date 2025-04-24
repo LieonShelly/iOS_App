@@ -5,6 +5,7 @@ struct CropOverlayView: View {
     @Binding var scale: CGFloat
     @Binding var translation: CGPoint
     @Binding var rotationAngle: Angle
+    @Binding var maxRect: CGRect
     
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
@@ -31,6 +32,10 @@ struct CropOverlayView: View {
                             topEdge = newTop
                             updateCropRect()
                         }
+                        if bottomEdge - newTop >= maxRect.height {
+                            topEdge = maxRect.minY
+                            updateCropRect()
+                        }
                     }
                     .onEnded { _ in
                         saveInitialRect()
@@ -49,10 +54,12 @@ struct CropOverlayView: View {
                 DragGesture()
                     .onChanged { value in
                         let newBottom = initialRect.maxY + value.translation.height
-                        // 确保不超过顶部边缘加上最小尺寸
                         if newBottom - topEdge >= minSize {
                             bottomEdge = newBottom
-                            // 更新cropRect以保持同步
+                            updateCropRect()
+                        }
+                        if newBottom - topEdge >= maxRect.height {
+                            bottomEdge = maxRect.maxY
                             updateCropRect()
                         }
                     }
@@ -73,12 +80,15 @@ struct CropOverlayView: View {
                 DragGesture()
                     .onChanged { value in
                         let newLeft = initialRect.minX + value.translation.width
-                        // 确保不超过右侧边缘减去最小尺寸
                         if rightEdge - newLeft >= minSize {
                             leftEdge = newLeft
-                            // 更新cropRect以保持同步
                             updateCropRect()
                         }
+                        if rightEdge - newLeft > maxRect.width {
+                            leftEdge = maxRect.minX
+                            updateCropRect()
+                        }
+                       
                     }
                     .onEnded { _ in
                         saveInitialRect()
@@ -97,10 +107,12 @@ struct CropOverlayView: View {
                 DragGesture()
                     .onChanged { value in
                         let newRight = initialRect.maxX + value.translation.width
-                        // 确保不超过左侧边缘加上最小尺寸
                         if newRight - leftEdge >= minSize {
                             rightEdge = newRight
-                            // 更新cropRect以保持同步
+                            updateCropRect()
+                        }
+                        if newRight - leftEdge >= maxRect.width {
+                            rightEdge = maxRect.maxX
                             updateCropRect()
                         }
                     }
@@ -122,14 +134,19 @@ struct CropOverlayView: View {
                     .onChanged { value in
                         let newLeft = initialRect.minX + value.translation.width
                         let newTop = initialRect.minY + value.translation.height
-                        // 确保不超过最小尺寸
                         if rightEdge - newLeft >= minSize {
                             leftEdge = newLeft
                         }
                         if bottomEdge - newTop >= minSize {
                             topEdge = newTop
                         }
-                        // 更新cropRect以保持同步
+                        
+                        if rightEdge - newLeft >= maxRect.width {
+                            leftEdge = maxRect.minX
+                        }
+                        if bottomEdge - newTop >= maxRect.height {
+                            topEdge = maxRect.minY
+                        }
                         updateCropRect()
                     }
                     .onEnded { _ in
@@ -150,14 +167,18 @@ struct CropOverlayView: View {
                     .onChanged { value in
                         let newRight = initialRect.maxX + value.translation.width
                         let newTop = initialRect.minY + value.translation.height
-                        // 确保不超过最小尺寸
-                        if newRight - leftEdge >= minSize {
+                        if  newRight - leftEdge >= minSize {
                             rightEdge = newRight
+                        }
+                        if newRight - leftEdge >= maxRect.width {
+                            rightEdge = maxRect.maxX
                         }
                         if bottomEdge - newTop >= minSize {
                             topEdge = newTop
                         }
-                        // 更新cropRect以保持同步
+                        if bottomEdge - newTop >= maxRect.height {
+                            topEdge = maxRect.minY
+                        }
                         updateCropRect()
                     }
                     .onEnded { _ in
@@ -178,14 +199,18 @@ struct CropOverlayView: View {
                     .onChanged { value in
                         let newLeft = initialRect.minX + value.translation.width
                         let newBottom = initialRect.maxY + value.translation.height
-                        // 确保不超过最小尺寸
                         if rightEdge - newLeft >= minSize {
                             leftEdge = newLeft
+                        }
+                        if rightEdge - newLeft >= maxRect.width {
+                            leftEdge = maxRect.minX
                         }
                         if newBottom - topEdge >= minSize {
                             bottomEdge = newBottom
                         }
-                        // 更新cropRect以保持同步
+                        if newBottom - topEdge > maxRect.height {
+                            bottomEdge = maxRect.maxY
+                        }
                         updateCropRect()
                     }
                     .onEnded { _ in
@@ -206,14 +231,18 @@ struct CropOverlayView: View {
                     .onChanged { value in
                         let newRight = initialRect.maxX + value.translation.width
                         let newBottom = initialRect.maxY + value.translation.height
-                        // 确保不超过最小尺寸
                         if newRight - leftEdge >= minSize {
                             rightEdge = newRight
+                        }
+                        if newRight - leftEdge > maxRect.width {
+                            rightEdge = maxRect.maxX
                         }
                         if newBottom - topEdge >= minSize {
                             bottomEdge = newBottom
                         }
-                        // 更新cropRect以保持同步
+                        if newBottom - topEdge > maxRect.height {
+                            bottomEdge = maxRect.maxY
+                        }
                         updateCropRect()
                     }
                     .onEnded { _ in

@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var debounceItem: DispatchWorkItem?
     @State private var rotationAngle: Angle = .zero
     @StateObject private var menuViewModel: ClippingMenuViewModel = .init()
+    @State private var maxRect: CGRect = .zero
     
     var body: some View {
         GeometryReader { geometry in
@@ -41,6 +42,7 @@ struct ContentView: View {
                 renderer.display(in: geometry.size.sizeInMetal)
                 imageFrame = renderer.getImageFrame(in: geometry.size)
                 cropRect = imageFrame
+                maxRect = imageFrame
                 menuViewModel.didUpdateProgress = { index, progress in
                     switch index {
                     case 0: renderer.rotate((-Float.pi + 2 * Float.pi * Float(progress)))
@@ -67,7 +69,7 @@ struct ContentView: View {
     func cropView(_ geometry: GeometryProxy) -> some View {
         Color.clear
             .overlay(
-                CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle)
+                CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle, maxRect: $maxRect)
             )
             .allowsHitTesting(true)
             .onChange(of: cropRect) {_,  newRect in
@@ -90,7 +92,7 @@ struct ContentView: View {
                 Image(systemName: "square.and.arrow.down.fill")
                     .foregroundStyle(AppColor.primary)
                     .onTapGesture {
-                        renderer.newCrop(cropRect) { result in
+                        renderer.newerCrop(cropRect) { result in
                             
                         }
                     }
