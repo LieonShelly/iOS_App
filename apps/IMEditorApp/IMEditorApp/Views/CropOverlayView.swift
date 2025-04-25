@@ -3,9 +3,9 @@ import SwiftUI
 struct CropOverlayView: View {
     @Binding var cropRect: CGRect
     @Binding var scale: CGFloat
-    @Binding var translation: CGPoint
     @Binding var rotationAngle: Angle
     @Binding var maxRect: CGRect
+    var didUpdateTranslation: ((_ offset: CGPoint, _ didEnd: Bool) -> Void)?
     
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
@@ -16,7 +16,6 @@ struct CropOverlayView: View {
     @State private var rightEdge: CGFloat = .zero
     @State private var initialized: Bool = false
     @State private var translationInMove: CGPoint = .zero
-    
     fileprivate func topline() -> some View {
         // 顶部边缘手柄
         Rectangle()
@@ -261,31 +260,28 @@ struct CropOverlayView: View {
             .position(x: (leftEdge + rightEdge) / 2, y: (topEdge + bottomEdge) / 2)
             .gesture(
                 SimultaneousGesture(
-                    SimultaneousGesture(
-                        DragGesture()
-                            .onChanged { value in
-                                if let last = lastDragLocation {
-                                    let delta = CGPoint(x: value.location.x - last.x, y: value.location.y - last.y)
-                                    self.translation = delta
-                                }
+                    DragGesture()
+                        .onChanged { value in
+                            guard let last = lastDragLocation else {
                                 lastDragLocation = value.location
+                                return
                             }
-                            .onEnded { value in
-                                lastDragLocation = nil
-                            },
-                        MagnificationGesture()
-                            .onChanged { scale in
-                                let adjustedScale = 1.0 + (scale - 1.0) * 0.5
-                                self.scale = adjustedScale
-                            }
-                            .onEnded { _ in
-                                self.scale = 1.0
-                            }
-                    ),
-                    RotateGesture()
-                    .onChanged { value in
-                        self.rotationAngle = value.rotation
-                    }
+                            let delta = CGPoint(x: value.location.x - last.x, y: value.location.y - last.y)
+                            didUpdateTranslation?(delta, false)
+                            lastDragLocation = value.location
+                        }
+                        .onEnded { value in
+                            didUpdateTranslation?(.zero, true)
+                            lastDragLocation = nil
+                        },
+                    MagnificationGesture()
+                        .onChanged { scale in
+                            let adjustedScale = 1.0 + (scale - 1.0) * 0.5
+                            self.scale = adjustedScale
+                        }
+                        .onEnded { _ in
+                            self.scale = 1.0
+                        }
                 )
             )
     }

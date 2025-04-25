@@ -10,4 +10,5 @@ import Foundation
 
 struct Uniforms {
     var transform: float4x4
+    var noTranslationT: float4x4
 }

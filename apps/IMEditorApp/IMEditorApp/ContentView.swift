@@ -12,12 +12,12 @@ struct ContentView: View {
     @StateObject var renderer = CropRender()
     @State private var cropRect: CGRect = .zero
     @State private var scale: CGFloat = .zero
-    @State private var translation: CGPoint = .zero
     @State private var imageFrame: CGRect = .zero
     @State private var debounceItem: DispatchWorkItem?
     @State private var rotationAngle: Angle = .zero
     @StateObject private var menuViewModel: ClippingMenuViewModel = .init()
     @State private var maxRect: CGRect = .zero
+    @State private var lastOffsetPx: CGPoint = .zero
     
     var body: some View {
         GeometryReader { geometry in
@@ -57,19 +57,57 @@ struct ContentView: View {
                 let scaleFactor = Float(newValue)
                 renderer.zoom(factor: scaleFactor)
             }
-            .onChange(of: translation) {_, newValue in
-                let offset = SIMD3<Float>(Float(CGFloat(newValue.x / geometry.size.width)), -Float(CGFloat(newValue.y / geometry.size.height)), 1)
-                renderer.pan(deltaX: offset.x, deltaY: offset.y)
-            }
             .onChange(of: rotationAngle) {_,  newValue in
                 renderer.rotate(Float(newValue.radians))
             }
     }
-    
+    @State var lastTx: Float = 0
+    @State var lastTy: Float = 0
     func cropView(_ geometry: GeometryProxy) -> some View {
         Color.clear
             .overlay(
-                CropOverlayView(cropRect: $cropRect, scale: $scale, translation: $translation, rotationAngle: $rotationAngle, maxRect: $maxRect)
+                CropOverlayView(cropRect: $cropRect, scale: $scale, rotationAngle: $rotationAngle, maxRect: $maxRect, didUpdateTranslation: { deltaPx, didEnd in
+                    // 取当前图像四角投影后在 View 坐标的 Rect
+                        let frame = renderer.getImageFrame(in: geometry.size)
+
+                        // 1) 模拟平移后的 Rect
+                        let attempted = frame.offsetBy(dx: deltaPx.x, dy: deltaPx.y)
+
+                        var actualDx = deltaPx.x
+                        var actualDy = deltaPx.y
+
+                        // —— X 方向限位 ——
+                        if deltaPx.x > 0 {
+                          // 向右拖，左边缘不能超出
+                          if attempted.minX > cropRect.minX {
+                            actualDx = cropRect.minX - frame.minX
+                          }
+                        } else if deltaPx.x < 0 {
+                          // 向左拖，右边缘不能超出
+                          if attempted.maxX < cropRect.maxX {
+                            actualDx = cropRect.maxX - frame.maxX
+                          }
+                        }
+
+                        // —— Y 方向限位 ——
+                        if deltaPx.y > 0 {
+                          // 向下拖，上边缘不能超出
+                          if attempted.minY > cropRect.minY {
+                            actualDy = cropRect.minY - frame.minY
+                          }
+                        } else if deltaPx.y < 0 {
+                          // 向上拖，下边缘不能超出
+                          if attempted.maxY < cropRect.maxY {
+                            actualDy = cropRect.maxY - frame.maxY
+                          }
+                        }
+
+                        // 归一化后调用 renderer
+                        let tdx = Float(actualDx / geometry.size.width)
+                        let tdy = -Float(actualDy / geometry.size.height)
+                        renderer.prepan(deltaX: tdx, deltaY: tdy)
+
+                })
             )
             .allowsHitTesting(true)
             .onChange(of: cropRect) {_,  newRect in

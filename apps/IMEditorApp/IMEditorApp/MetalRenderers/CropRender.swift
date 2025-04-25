@@ -71,13 +71,26 @@ class CropRender: MetalRenderer {
         }
     }
     
-    func pan(deltaX: Float, deltaY: Float) {
+    func prepan(deltaX: Float, deltaY: Float) {
+        print("deltaX:\(deltaX) - deltaY:\(deltaY)")
+        offsetX += deltaX
+        offsetY += deltaY
+        updateVertices()
+    }
+    
+    
+    func pan(deltaX: Float) {
         let sensitivityFactor = 1.0 / scale
-        
         let adjustedDeltaX = deltaX * sensitivityFactor
-        let adjustedDeltaY = deltaY * sensitivityFactor
-        
         offsetX += adjustedDeltaX
+        updateVertices()
+    }
+    
+    func pan(deltaY: Float) {
+        let sensitivityFactor = 1.0 / scale
+
+        let adjustedDeltaY = deltaY * sensitivityFactor
+
         offsetY += adjustedDeltaY
         updateVertices()
     }
@@ -143,9 +156,13 @@ class CropRender: MetalRenderer {
         
         uniforms.transform = perspective * viewMatrix * modelMatrix
         
+        uniforms.noTranslationT = perspective * viewMatrix * rotationMatrix * scaleMatrix * mirrorMatrix
+        
         let metalPoint = currentVertices.map { uniforms.transform * SIMD4<Float>(Float($0.x), Float($0.y), 0, 1) }
-        print("after transform metalPoint:\(metalPoint)")
+        print("metalPoint:\(metalPoint)")
     }
+    
+    
     
     func newCrop(_ cropRectInView: CGRect, completion: @escaping (Bool) -> Void) {
         let viewSize = metalView.drawableSize
