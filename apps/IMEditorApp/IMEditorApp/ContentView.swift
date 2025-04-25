@@ -20,18 +20,18 @@ struct ContentView: View {
     @State private var lastOffsetPx: CGPoint = .zero
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // 图像视图 (底层)
-                renderView(geometry)
-                
-                // 裁剪框层 (固定位置)
-                cropView(geometry)
-                
-                // 控制按钮 (顶层)
-                menuView(geometry)
+        VStack(spacing: .zero) {
+            Rectangle().fill(.blue).frame(height: 40)
+            GeometryReader { geometry in
+                ZStack {
+                    renderView(geometry)
+                    cropView(geometry)
+                }
             }
+            Rectangle().fill(.blue).frame(height: 40)
         }
+        
+      
     }
     
     
@@ -42,7 +42,7 @@ struct ContentView: View {
                 renderer.display(in: geometry.size.sizeInMetal)
                 imageFrame = renderer.getImageFrame(in: geometry.size)
                 cropRect = imageFrame
-                maxRect = imageFrame
+                maxRect = geometry.frame(in: .global)
                 menuViewModel.didUpdateProgress = { index, progress in
                     switch index {
                     case 0: renderer.rotate((-Float.pi + 2 * Float.pi * Float(progress)))
@@ -66,61 +66,51 @@ struct ContentView: View {
     func cropView(_ geometry: GeometryProxy) -> some View {
         Color.clear
             .overlay(
-                CropOverlayView(cropRect: $cropRect, scale: $scale, rotationAngle: $rotationAngle, maxRect: $maxRect, didUpdateTranslation: { deltaPx, didEnd in
-                    // 取当前图像四角投影后在 View 坐标的 Rect
+                CropOverlayView(
+                    cropRect: $cropRect,
+                    scale: $scale,
+                    rotationAngle: $rotationAngle,
+                    getmaxRect: {
+                        return renderer.getImageFrame(in: geometry.size)
+                    },
+                    didUpdateTranslation: { deltaPx, didEnd in
                         let frame = renderer.getImageFrame(in: geometry.size)
-
-                        // 1) 模拟平移后的 Rect
+                        // 模拟平移后的rect
                         let attempted = frame.offsetBy(dx: deltaPx.x, dy: deltaPx.y)
-
+                        
                         var actualDx = deltaPx.x
                         var actualDy = deltaPx.y
-
-                        // —— X 方向限位 ——
+                        
                         if deltaPx.x > 0 {
-                          // 向右拖，左边缘不能超出
-                          if attempted.minX > cropRect.minX {
-                            actualDx = cropRect.minX - frame.minX
-                          }
+                            // 向右拖，左边缘不能超出
+                            if attempted.minX > cropRect.minX {
+                                actualDx = cropRect.minX - frame.minX
+                            }
                         } else if deltaPx.x < 0 {
-                          // 向左拖，右边缘不能超出
-                          if attempted.maxX < cropRect.maxX {
-                            actualDx = cropRect.maxX - frame.maxX
-                          }
+                            if attempted.maxX < cropRect.maxX {
+                                actualDx = cropRect.maxX - frame.maxX
+                            }
                         }
-
-                        // —— Y 方向限位 ——
+                        
                         if deltaPx.y > 0 {
-                          // 向下拖，上边缘不能超出
-                          if attempted.minY > cropRect.minY {
-                            actualDy = cropRect.minY - frame.minY
-                          }
+                            // 向下拖
+                            if attempted.minY > cropRect.minY {
+                                actualDy = cropRect.minY - frame.minY
+                            }
                         } else if deltaPx.y < 0 {
-                          // 向上拖，下边缘不能超出
-                          if attempted.maxY < cropRect.maxY {
-                            actualDy = cropRect.maxY - frame.maxY
-                          }
+                            // 向上拖
+                            if attempted.maxY < cropRect.maxY {
+                                actualDy = cropRect.maxY - frame.maxY
+                            }
                         }
-
-                        // 归一化后调用 renderer
+                        
                         let tdx = Float(actualDx / geometry.size.width)
                         let tdy = -Float(actualDy / geometry.size.height)
                         renderer.prepan(deltaX: tdx, deltaY: tdy)
-
-                })
+                    }
+                )
             )
             .allowsHitTesting(true)
-            .onChange(of: cropRect) {_,  newRect in
-                let boundedRect = CGRect(
-                    x: max(imageFrame.minX, min(newRect.minX, imageFrame.maxX - newRect.width)),
-                    y: max(imageFrame.minY, min(newRect.minY, imageFrame.maxY - newRect.height)),
-                    width: min(newRect.width, imageFrame.width),
-                    height: min(newRect.height, imageFrame.height)
-                )
-                if boundedRect != newRect {
-                    cropRect = boundedRect
-                }
-            }
     }
     
     func menuView(_ geometry: GeometryProxy) -> some View {

@@ -150,7 +150,7 @@ class CropRender: MetalRenderer {
 
         self.modelMatrix = rotationMatrix * scaleMatrix * translation * mirrorMatrix
         
-        viewMatrix = float4x4(eye: .init(x: 0, y: 0, z: -2), center: .zero, up: .init(x: 0, y: 1, z: 0))
+        viewMatrix = float4x4(eye: .init(x: 0, y: 0, z: -0.5), center: .zero, up: .init(x: 0, y: 1, z: 0))
         
         let perspective = float4x4(perspectiveFov: Float(Angle(degrees: 70).radians), aspect: viewAspect, near: 1, far: 2000)
         

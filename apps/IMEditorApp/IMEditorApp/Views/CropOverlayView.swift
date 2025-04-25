@@ -4,7 +4,8 @@ struct CropOverlayView: View {
     @Binding var cropRect: CGRect
     @Binding var scale: CGFloat
     @Binding var rotationAngle: Angle
-    @Binding var maxRect: CGRect
+      
+    var getmaxRect: (() -> CGRect)
     var didUpdateTranslation: ((_ offset: CGPoint, _ didEnd: Bool) -> Void)?
     
     let handleThickness: CGFloat = 30
@@ -16,6 +17,8 @@ struct CropOverlayView: View {
     @State private var rightEdge: CGFloat = .zero
     @State private var initialized: Bool = false
     @State private var translationInMove: CGPoint = .zero
+    @State private var initialRect0: CGRect = .zero
+    
     fileprivate func topline() -> some View {
         // 顶部边缘手柄
         Rectangle()
@@ -31,6 +34,7 @@ struct CropOverlayView: View {
                             topEdge = newTop
                             updateCropRect()
                         }
+                        let maxRect = getmaxRect()
                         if bottomEdge - newTop >= maxRect.height {
                             topEdge = maxRect.minY
                             updateCropRect()
@@ -52,15 +56,13 @@ struct CropOverlayView: View {
             .gesture(
                 DragGesture()
                     .onChanged { value in
+                        let maxRect = getmaxRect()
                         let newBottom = initialRect.maxY + value.translation.height
-                        if newBottom - topEdge >= minSize {
+                        if newBottom - topEdge >= minSize, newBottom <= maxRect.maxY {
                             bottomEdge = newBottom
                             updateCropRect()
                         }
-                        if newBottom - topEdge >= maxRect.height {
-                            bottomEdge = maxRect.maxY
-                            updateCropRect()
-                        }
+
                     }
                     .onEnded { _ in
                         saveInitialRect()
@@ -83,6 +85,7 @@ struct CropOverlayView: View {
                             leftEdge = newLeft
                             updateCropRect()
                         }
+                        let maxRect = getmaxRect()
                         if rightEdge - newLeft > maxRect.width {
                             leftEdge = maxRect.minX
                             updateCropRect()
@@ -110,6 +113,7 @@ struct CropOverlayView: View {
                             rightEdge = newRight
                             updateCropRect()
                         }
+                        let maxRect = getmaxRect()
                         if newRight - leftEdge >= maxRect.width {
                             rightEdge = maxRect.maxX
                             updateCropRect()
@@ -139,7 +143,7 @@ struct CropOverlayView: View {
                         if bottomEdge - newTop >= minSize {
                             topEdge = newTop
                         }
-                        
+                        let maxRect = getmaxRect()
                         if rightEdge - newLeft >= maxRect.width {
                             leftEdge = maxRect.minX
                         }
@@ -169,6 +173,7 @@ struct CropOverlayView: View {
                         if  newRight - leftEdge >= minSize {
                             rightEdge = newRight
                         }
+                        let maxRect = getmaxRect()
                         if newRight - leftEdge >= maxRect.width {
                             rightEdge = maxRect.maxX
                         }
@@ -201,6 +206,7 @@ struct CropOverlayView: View {
                         if rightEdge - newLeft >= minSize {
                             leftEdge = newLeft
                         }
+                        let maxRect = getmaxRect()
                         if rightEdge - newLeft >= maxRect.width {
                             leftEdge = maxRect.minX
                         }
@@ -233,6 +239,7 @@ struct CropOverlayView: View {
                         if newRight - leftEdge >= minSize {
                             rightEdge = newRight
                         }
+                        let maxRect = getmaxRect()
                         if newRight - leftEdge > maxRect.width {
                             rightEdge = maxRect.maxX
                         }
@@ -246,6 +253,8 @@ struct CropOverlayView: View {
                     }
                     .onEnded { _ in
                         saveInitialRect()
+                        didEndDrag()
+                        preRect = cropRect
                     }
             )
     }
@@ -329,21 +338,23 @@ struct CropOverlayView: View {
 
         }
         .onAppear {
-            initializeEdges()
+            updateEdges(cropRect)
         }
-        .onChange(of: cropRect) { newRect in
+        .onChange(of: cropRect) {_, newRect in
             if !initialized, newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
-                initializeEdges()
+                updateEdges(newRect)
+                preRect = newRect
                 initialized = true
+                initialRect0 = newRect
             }
         }
     }
     
-    private func initializeEdges() {
-        leftEdge = cropRect.minX
-        rightEdge = cropRect.maxX
-        topEdge = cropRect.minY
-        bottomEdge = cropRect.maxY
+    private func updateEdges(_ rect: CGRect) {
+        leftEdge = rect.minX
+        rightEdge = rect.maxX
+        topEdge = rect.minY
+        bottomEdge = rect.maxY
         saveInitialRect()
     }
     
@@ -353,5 +364,33 @@ struct CropOverlayView: View {
     
     private func updateCropRect() {
         cropRect = CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge)
+    }
+    
+    @State private var preRect: CGRect = .zero
+    
+    func didEndDrag() {
+        let preSize = preRect.width * preRect.height
+        let currentSize = cropRect.width * cropRect.height
+        let scale = preSize / currentSize
+        let translation = CGPoint(x: -(preRect.midX - cropRect.midX), y: -(preRect.midY - cropRect.midY))
+//        self.scale = scale
+//        didUpdateTranslation?(translation, true)
+       
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
+            let cropAspect = cropRect.width / cropRect.height
+            let initialAspect = initialRect0.width / initialRect0.height
+            if cropAspect > initialAspect {
+                let width = initialRect0.width
+                let height = width / cropAspect
+                updateEdges(CGRect(x: initialRect0.midX - width * 0.5, y: initialRect0.midY - height * 0.5, width: width, height: height))
+            } else {
+                let height = initialRect0.height
+                let width = height * cropAspect
+                updateEdges(CGRect(x: initialRect0.midX - width * 0.5, y: initialRect0.midY - height * 0.5, width: width, height: height))
+            }
+            
+            print("initialRect0:\(initialRect0) - cropRect:\(cropRect)")
+        })
     }
 }
