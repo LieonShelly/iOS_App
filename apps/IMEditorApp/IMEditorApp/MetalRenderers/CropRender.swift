@@ -152,7 +152,7 @@ class CropRender: MetalRenderer {
             displaylink = nil
         } else {
             var progress = elapsed / animationDuration
-            progress = 1 - pow(1 - progress, 3)
+            progress = AnimationCurve.spring.apply(to: progress)
             scale = startScale + (targetSacale - startScale) * progress
             updateVertices()
             metalView.draw()
@@ -359,3 +359,5 @@ class CropRender: MetalRenderer {
     }
 
 }
+
+
