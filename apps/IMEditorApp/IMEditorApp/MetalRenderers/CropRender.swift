@@ -27,6 +27,11 @@ class CropRender: MetalRenderer {
     var angleX: Float = 0
     var cropPipelineState: MTLRenderPipelineState!
     var fullscreenQuadVB: MTLBuffer!
+    var startScale: Float = 1.0
+    var targetSacale: Float = 1.0
+    var animationDuration: Float = 0.5
+    var animationStartTime: CFTimeInterval = 0
+    var displaylink: CADisplayLink?
     
     override init() {
         super.init()
@@ -120,13 +125,38 @@ class CropRender: MetalRenderer {
     }
     
     func resetTransform() {
-        scale = 1.0
         offsetX = 0.0
         offsetY = 0.0
         angle = 0.0
         angleX = 0.0
         angleY = 0
-        updateVertices()
+        startScaleAnimation(newScale: 1.0)
+    }
+    
+    func startScaleAnimation(newScale: Float) {
+        startScale = scale
+        targetSacale = newScale
+        animationStartTime = CACurrentMediaTime()
+        
+        displaylink?.invalidate()
+        displaylink = CADisplayLink(target: self, selector: #selector(updateScaleAnimation))
+        displaylink?.add(to: .main, forMode: .common)
+    }
+    
+    @objc func updateScaleAnimation() {
+        let curretTime = CACurrentMediaTime()
+        let elapsed = Float(curretTime - animationStartTime)
+        if elapsed >= animationDuration {
+            scale = targetSacale
+            displaylink?.invalidate()
+            displaylink = nil
+        } else {
+            var progress = elapsed / animationDuration
+            progress = 1 - pow(1 - progress, 3)
+            scale = startScale + (targetSacale - startScale) * progress
+            updateVertices()
+            metalView.draw()
+        }
     }
     
     private func updateVertices() {

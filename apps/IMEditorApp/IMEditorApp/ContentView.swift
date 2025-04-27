@@ -21,7 +21,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: .zero) {
-            Rectangle().fill(.blue).frame(height: 40)
+            header
             GeometryReader { geometry in
                 ZStack {
                     renderView(geometry)
@@ -30,8 +30,6 @@ struct ContentView: View {
             }
             Rectangle().fill(.blue).frame(height: 40)
         }
-        
-      
     }
     
     
@@ -113,26 +111,28 @@ struct ContentView: View {
             .allowsHitTesting(true)
     }
     
+    var header: some View {
+        HStack {
+            Spacer()
+            Image(systemName: "square.and.arrow.down.fill")
+                .foregroundStyle(AppColor.primary)
+                .onTapGesture {
+                    renderer.startScaleAnimation(newScale: 3.0)
+                }
+            
+            Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+                .foregroundStyle(AppColor.primary)
+                .onTapGesture {
+                    renderer.resetTransform()
+                }
+            
+        }
+        .padding(.horizontal, 20)
+    }
+    
     func menuView(_ geometry: GeometryProxy) -> some View {
         VStack {
-            HStack {
-                Spacer()
-                Image(systemName: "square.and.arrow.down.fill")
-                    .foregroundStyle(AppColor.primary)
-                    .onTapGesture {
-                        renderer.newerCrop(cropRect) { result in
-                            
-                        }
-                    }
-                
-                Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
-                    .foregroundStyle(AppColor.primary)
-                    .onTapGesture {
-                        renderer.resetTransform()
-                    }
-                
-            }
-            .padding(.horizontal, 20)
+           
             Spacer()
             ClippingMenu(viewModel: menuViewModel)
         }
