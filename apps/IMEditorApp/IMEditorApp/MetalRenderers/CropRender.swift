@@ -25,54 +25,25 @@ class CropRender: MetalRenderer {
     var shearX: Float = 1
     var angleY: Float = 0
     var angleX: Float = 0
-    var cropPipelineState: MTLRenderPipelineState!
-    var fullscreenQuadVB: MTLBuffer!
     var startScale: Float = 1.0
     var targetSacale: Float = 1.0
     var animationDuration: Float = 0.5
     var animationStartTime: CFTimeInterval = 0
     var displaylink: CADisplayLink?
     
-    override init() {
-        super.init()
-        let quad: [Float] = [
-          -1,  1,     0,0,
-          -1, -1,     0,0,
-           1,  1,     0,0,
-           1, -1,     0,0,
-        ]
-        fullscreenQuadVB = device.makeBuffer(bytes: quad, length: quad.count * MemoryLayout<Float>.size, options: [])
-    }
-    
-    override func setupPipeline(_ view: MTKView) {
-        super.setupPipeline(view)
-        guard let library = device.makeDefaultLibrary() else {
-            fatalError("Error: Failed to load Metal shader library")
-        }
-        
-        let vertexFunction = library.makeFunction(name: "cropVertext")
-        let fragmentFunction = library.makeFunction(name: "cropFragment")
-        
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.vertexFunction = vertexFunction
-        pipelineDescriptor.fragmentFunction = fragmentFunction
-        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
-        pipelineDescriptor.vertexDescriptor = createVertexDescriptor() // 配置 MTLVertexDescriptor
-        view.clearColor = MTLClearColor(red: 1, green: 1, blue: 1, alpha: 1)
-        
-        do {
-            cropPipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-        } catch {
-            fatalError("Error: Failed to create pipeline state - \(error)")
-        }
-        
-    }
-    
     func zoom(factor: Float) {
         let newScale = scale * factor
         if newScale >= 0.1 && newScale <= 5.0 {
             scale = newScale
             updateVertices()
+        }
+    }
+    
+    func didEndDrag() {
+        if scale < 1.0 {
+            startScaleAnimation(newScale: 1.0)
+        } else if scale > 3.0 {
+            startScaleAnimation(newScale: 3.0)
         }
     }
     
@@ -152,7 +123,7 @@ class CropRender: MetalRenderer {
             displaylink = nil
         } else {
             var progress = elapsed / animationDuration
-            progress = AnimationCurve.spring.apply(to: progress)
+            progress = AnimationCurve.easeInOut.apply(to: progress)
             scale = startScale + (targetSacale - startScale) * progress
             updateVertices()
             metalView.draw()
@@ -177,19 +148,27 @@ class CropRender: MetalRenderer {
         let XRotationMatrix = float4x4(angleX: angleX)
         let rotationMatrix = zRotationMatrix * yRotationMatrix * XRotationMatrix
         let mirrorMatrix = float4x4(mirrorX: isHorizonMirror, mirrorY: false)
-
+        
         self.modelMatrix = rotationMatrix * scaleMatrix * translation * mirrorMatrix
         
-        viewMatrix = float4x4(eye: .init(x: 0, y: 0, z: -0.5), center: .zero, up: .init(x: 0, y: 1, z: 0))
+        let imageAspect = Float(imageSize.width / imageSize.height)
+        var cropLeft: Float = -1 * viewAspect
+        var cropRight: Float = 1 * viewAspect
+        var cropTop: Float = 1
+        var cropBottom: Float = -1
         
-        let perspective = float4x4(perspectiveFov: Float(Angle(degrees: 70).radians), aspect: viewAspect, near: 1, far: 2000)
-        
-        uniforms.transform = perspective * viewMatrix * modelMatrix
-        
-        uniforms.noTranslationT = perspective * viewMatrix * rotationMatrix * scaleMatrix * mirrorMatrix
+        if imageAspect > viewAspect {
+            cropLeft = -1
+            cropRight = 1
+            cropTop =  (1.0 / viewAspect)
+            cropBottom = -(1.0 / viewAspect)
+            
+        }
+        let cropProjection = float4x4(orthographicLeft: cropLeft, right: cropRight, bottom: cropBottom, top: cropTop, near: -1, far: 1)
+        uniforms.transform = cropProjection * modelMatrix
         
         let metalPoint = currentVertices.map { uniforms.transform * SIMD4<Float>(Float($0.x), Float($0.y), 0, 1) }
-        print("metalPoint:\(metalPoint)")
+        print("after transform metalPoint:\(metalPoint)")
     }
     
     
@@ -200,15 +179,32 @@ class CropRender: MetalRenderer {
                                     y: cropRectInView.origin.y * UIScreen.main.nativeScale,
                                     width: cropRectInView.width * UIScreen.main.nativeScale,
                                     height: cropRectInView.height * UIScreen.main.nativeScale)
+        // 1. 将 cropRect 从 UIKit 坐标转换为 Metal 坐标中心为 (0,0)
+        let viewAspect: Float = Float(viewSize.width / viewSize.height)
+        let imageAspect = Float(imageSize.width / imageSize.height)
+        var cropLeft = (Float(cropRectInView.minX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
+        var cropRight = (Float(cropRectInView.maxX) / Float(viewSize.width)) * 2 * viewAspect - viewAspect
+        var cropTop = (1.0 - Float(cropRectInView.minY) / Float(viewSize.height)) * 2.0 - 1.0
+        var cropBottom = (1.0 - Float(cropRectInView.maxY) / Float(viewSize.height)) * 2.0 - 1.0
+        
+        if imageAspect > viewAspect {
+            cropLeft = (Float(cropRectInView.minX) / Float(viewSize.width)) * 2.0 - 1.0
+            cropRight = (Float(cropRectInView.maxX) / Float(viewSize.width)) * 2.0 - 1.0
+            cropTop = (1.0 - Float(cropRectInView.minY) / Float(viewSize.height)) * 2.0 * (1.0 / viewAspect) - (1.0 / viewAspect)
+            cropBottom = (1.0 - Float(cropRectInView.maxY) / Float(viewSize.height)) * 2.0 * (1.0 / viewAspect) - (1.0 / viewAspect)
+            
+        }
+        let cropProjection = float4x4(orthographicLeft: cropLeft, right: cropRight, bottom: cropBottom, top: cropTop, near: -1, far: 1)
+        var cropTransform = cropProjection * modelMatrix
         
         
         // 2. 创建裁剪目标纹理
-        let offScreenWidth = Int(viewSize.width)
-        let offScreenHeight = Int(viewSize.height)
+        let cropPixelWidth = Int(cropRectInView.size.width)
+        let cropPixelHeight = Int(cropRectInView.size.height)
         
         let outputDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm,
-                                                                  width: offScreenWidth,
-                                                                  height: offScreenHeight,
+                                                                  width: cropPixelWidth,
+                                                                  height: cropPixelHeight,
                                                                   mipmapped: false)
         outputDesc.usage = [.renderTarget, .shaderRead, .shaderWrite]
         guard let outputTexture = device.makeTexture(descriptor: outputDesc) else {
@@ -216,12 +212,12 @@ class CropRender: MetalRenderer {
             return
         }
         
-        guard let renderPassDescriptor = makeRenderPassDescriptor(for: outputTexture) else { 
+        guard let renderPassDescriptor = makeRenderPassDescriptor(for: outputTexture) else {
             completion(false)
-            return  
+            return
         }
-
-
+        
+        
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
         else {
@@ -231,7 +227,7 @@ class CropRender: MetalRenderer {
         
         encoder.setRenderPipelineState(pipelineState)
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        encoder.setVertexBytes(&uniforms.transform, length: MemoryLayout<float4x4>.size, index: 1)
+        encoder.setVertexBytes(&cropTransform, length: MemoryLayout<float4x4>.size, index: 1)
         encoder.setFragmentTexture(texture, index: 0)
         encoder.drawIndexedPrimitives(type: .triangle,
                                       indexCount: indexBuffer.length / MemoryLayout<UInt16>.stride,
@@ -241,50 +237,10 @@ class CropRender: MetalRenderer {
         encoder.endEncoding()
         
         commandBuffer.addCompletedHandler { _ in
-            self.saveTextureToFile(outputTexture, filename: "offscreen.png")
-            self.copTexture(cropRectInMetal: cropRectInView, source: outputTexture)
+            self.saveTextureToFile(outputTexture, filename: "cropped.png")
             completion(true)
         }
         
-        commandBuffer.commit()
-    }
-    
-    func copTexture(cropRectInMetal: CGRect, source: any MTLTexture) {
-        let viewSize = metalView.drawableSize
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
-        let pxX = Int(cropRectInMetal.minX)
-        let pxY = Int(cropRectInMetal.minY)
-        let pxW = Int(cropRectInMetal.width)
-        let pxH = Int(cropRectInMetal.height)
-        
-        let croppedDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm,
-                                                                   width: Int(cropRectInMetal.width),
-                                                                   height: Int(cropRectInMetal.height),
-                                                                  mipmapped: false)
-        croppedDesc.usage = [.renderTarget, .shaderRead, .shaderWrite]
-        
-        guard let croppedTexture = device.makeTexture(descriptor: croppedDesc) else {
-            return
-        }
-        
-        let blit = commandBuffer.makeBlitCommandEncoder()
-        let origin = MTLOrigin(x: pxX, y: pxY, z: 0)
-        let size   = MTLSize( width: pxW, height: pxH, depth: 1 )
-        blit?.copy(
-            from: source,
-            sourceSlice: 0,
-            sourceLevel: 0,
-            sourceOrigin: origin,
-            sourceSize: size,
-            to: croppedTexture,
-            destinationSlice: 0,
-            destinationLevel: 0,
-            destinationOrigin: .init(x: 0, y: 0, z: 0)
-        )
-        blit?.endEncoding()
-        commandBuffer.addCompletedHandler { _ in
-            self.saveTextureToFile(croppedTexture, filename: "croppedTexture.png")
-        }
         commandBuffer.commit()
     }
     
@@ -296,68 +252,6 @@ class CropRender: MetalRenderer {
         descriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         return descriptor
     }
-    
-    func newerCrop(_ cropRectInView: CGRect, completion: @escaping (Bool) -> Void) {
-        let cropRectInView = CGRect(x: cropRectInView.origin.x * UIScreen.main.nativeScale,
-                                    y: cropRectInView.origin.y * UIScreen.main.nativeScale,
-                                    width: cropRectInView.width * UIScreen.main.nativeScale,
-                                    height: cropRectInView.height * UIScreen.main.nativeScale)
-        
-        let viewSize = metalView.drawableSize
-        let w = Float(viewSize.width)
-        let h = Float(viewSize.height)
-
-        // 1) pixel → normalized [0…1]
-        let u0 = Float(cropRectInView.minX) / w
-        let v0 = Float(cropRectInView.minY) / h
-        let u1 = Float(cropRectInView.maxX) / w
-        let v1 = Float(cropRectInView.maxY) / h
-
-        // 2) normalized → NDC [–1…+1]
-        let cropLeft   =  u0*2 - 1
-        let cropRight  =  u1*2 - 1
-        let cropBottom =  1 - v1*2   // flip Y because screen Y=0 is top
-        let cropTop    =  1 - v0*2
-
-        // Now your quad vertex positions (in NDC) become:
-        let quad: [Float] = [
-          //   x,           y,    padX, padY
-            cropLeft,  cropTop,    0,    0,
-            cropLeft,  cropBottom, 0,    0,
-            cropRight, cropTop,    0,    0,
-            cropRight, cropBottom, 0,    0,
-        ]
-        fullscreenQuadVB = device.makeBuffer(bytes: quad,
-                                         length: quad.count * MemoryLayout<Float>.size,
-                                         options: [])
-        
-        let scale = UIScreen.main.nativeScale
-        let pxRect = CGRect(x: cropRectInView.origin.x * scale, y: cropRectInView.origin.y * scale,
-                            width: cropRectInView.width * scale, height: cropRectInView.height * scale)
-        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: Int(pxRect.width), height: Int(pxRect.height), mipmapped: false)
-        desc.usage = [.renderTarget, .shaderRead]
-        guard let outTex = device.makeTexture(descriptor: desc), let passDesc = makeRenderPassDescriptor(for: outTex) else { return }
-        
-        guard let cmdBuf = commandQueue.makeCommandBuffer(), let encoder = cmdBuf.makeRenderCommandEncoder(descriptor: passDesc) else { return }
-        
-        encoder.setRenderPipelineState(cropPipelineState) // 传入cropPipelineState
-        encoder.setVertexBuffer(fullscreenQuadVB, offset: 0, index: 0)
-        
-        var inv = uniforms.transform.inverse
-        encoder.setVertexBytes(&inv, length: MemoryLayout<float4x4>.stride, index: 1)
-        encoder.setFragmentTexture(texture!, index: 0)
-        encoder.setFragmentBytes(&inv, length: MemoryLayout<float4x4>.stride, index: 1)
-        
-        encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
-        encoder.endEncoding()
-        
-        cmdBuf.addCompletedHandler { _ in
-            self.saveTextureToFile(outTex, filename: "newerCrop.png")
-        }
-        cmdBuf.commit()
-        
-    }
-
 }
 
 

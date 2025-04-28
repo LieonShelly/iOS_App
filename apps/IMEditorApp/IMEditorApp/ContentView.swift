@@ -59,8 +59,7 @@ struct ContentView: View {
                 renderer.rotate(Float(newValue.radians))
             }
     }
-    @State var lastTx: Float = 0
-    @State var lastTy: Float = 0
+    
     func cropView(_ geometry: GeometryProxy) -> some View {
         Color.clear
             .overlay(
@@ -105,6 +104,9 @@ struct ContentView: View {
                         let tdx = Float(actualDx / geometry.size.width)
                         let tdy = -Float(actualDy / geometry.size.height)
                         renderer.prepan(deltaX: tdx, deltaY: tdy)
+                    },
+                    didEndDragHandler: {
+                        
                     }
                 )
             )
@@ -114,20 +116,25 @@ struct ContentView: View {
     var header: some View {
         HStack {
             Spacer()
-            Image(systemName: "square.and.arrow.down.fill")
-                .foregroundStyle(AppColor.primary)
-                .onTapGesture {
-                    renderer.startScaleAnimation(newScale: 3.0)
+            HStack {
+                Button {
+                    renderer.newCrop(cropRect, completion: { _ in })
+                } label: {
+                    Image(systemName: "square.and.arrow.down.fill")
+                        .foregroundStyle(AppColor.primary)
                 }
-            
-            Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
-                .foregroundStyle(AppColor.primary)
-                .onTapGesture {
+                Button {
                     renderer.resetTransform()
+                } label: {
+                    Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+                        .foregroundStyle(AppColor.primary)
                 }
-            
+            }
+            .padding(.trailing, 20)
         }
-        .padding(.horizontal, 20)
+        .frame(height: 40)
+        .background(.red)
+       
     }
     
     func menuView(_ geometry: GeometryProxy) -> some View {

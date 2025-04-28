@@ -7,7 +7,7 @@ struct CropOverlayView: View {
       
     var getmaxRect: (() -> CGRect)
     var didUpdateTranslation: ((_ offset: CGPoint, _ didEnd: Bool) -> Void)?
-    
+    var didEndDragHandler: (() -> Void)?
     let handleThickness: CGFloat = 30
     let minSize: CGFloat = 50
     @State private var initialRect: CGRect = .zero
@@ -18,6 +18,7 @@ struct CropOverlayView: View {
     @State private var initialized: Bool = false
     @State private var translationInMove: CGPoint = .zero
     @State private var initialRect0: CGRect = .zero
+    
     
     fileprivate func topline() -> some View {
         // 顶部边缘手柄
@@ -253,8 +254,6 @@ struct CropOverlayView: View {
                     }
                     .onEnded { _ in
                         saveInitialRect()
-                        didEndDrag()
-                        preRect = cropRect
                     }
             )
     }
@@ -289,7 +288,7 @@ struct CropOverlayView: View {
                             self.scale = adjustedScale
                         }
                         .onEnded { _ in
-                            self.scale = 1.0
+                            didEndDragHandler?()
                         }
                 )
             )
@@ -343,7 +342,6 @@ struct CropOverlayView: View {
         .onChange(of: cropRect) {_, newRect in
             if !initialized, newRect != CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge) {
                 updateEdges(newRect)
-                preRect = newRect
                 initialized = true
                 initialRect0 = newRect
             }
@@ -364,33 +362,5 @@ struct CropOverlayView: View {
     
     private func updateCropRect() {
         cropRect = CGRect(x: leftEdge, y: topEdge, width: rightEdge - leftEdge, height: bottomEdge - topEdge)
-    }
-    
-    @State private var preRect: CGRect = .zero
-    
-    func didEndDrag() {
-        let preSize = preRect.width * preRect.height
-        let currentSize = cropRect.width * cropRect.height
-        let scale = preSize / currentSize
-        let translation = CGPoint(x: -(preRect.midX - cropRect.midX), y: -(preRect.midY - cropRect.midY))
-//        self.scale = scale
-//        didUpdateTranslation?(translation, true)
-       
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
-            let cropAspect = cropRect.width / cropRect.height
-            let initialAspect = initialRect0.width / initialRect0.height
-            if cropAspect > initialAspect {
-                let width = initialRect0.width
-                let height = width / cropAspect
-                updateEdges(CGRect(x: initialRect0.midX - width * 0.5, y: initialRect0.midY - height * 0.5, width: width, height: height))
-            } else {
-                let height = initialRect0.height
-                let width = height * cropAspect
-                updateEdges(CGRect(x: initialRect0.midX - width * 0.5, y: initialRect0.midY - height * 0.5, width: width, height: height))
-            }
-            
-            print("initialRect0:\(initialRect0) - cropRect:\(cropRect)")
-        })
     }
 }
