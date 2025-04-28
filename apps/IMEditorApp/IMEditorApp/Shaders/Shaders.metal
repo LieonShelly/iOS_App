@@ -33,7 +33,28 @@ vertex VertexOut vertexShader(VertexIn in [[stage_in]], constant Uniforms& unifo
 }
 
 fragment float4 fragmentShader(VertexOut in [[stage_in]], texture2d<float> texture [[texture(0)]]) {
-    constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
-    return texture.sample(textureSampler, in.texCoord);
+    constexpr sampler textureSampler (mag_filter::linear, min_filter::linear, mip_filter::linear, address::repeat);
+
+     float2 uv = in.texCoord;
+
+     // 让 uv 中心对齐到 (0,0)，方便旋转
+     uv -= 0.5;
+
+     // 旋转 45 度
+    float angle = 3.14 * 45 / 180;
+     float cosA = cos(angle);
+     float sinA = sin(angle);
+     float2 rotatedUV;
+     rotatedUV.x = cosA * uv.x - sinA * uv.y;
+     rotatedUV.y = sinA * uv.x + cosA * uv.y;
+
+     // 旋转完之后再平铺，缩放 UV
+    rotatedUV *= float2(5, 5); // 比如 (5.0, 5.0)
+
+     // 把中心再移回去
+     rotatedUV += 0.5;
+
+     // 最后采样纹理
+     return texture.sample(textureSampler, rotatedUV);
 }
 

@@ -22,7 +22,7 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
     var currentVertices: [CGPoint] = []
     var imageSize: CGSize = .zero
     
-    var uniforms: Uniforms = .init(transform: .identity, noTranslationT: .identity)
+    var uniforms: Uniforms = .init(transform: .identity)
     
     override init() {
         self.device = MTLCreateSystemDefaultDevice()
@@ -48,6 +48,12 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
         pipelineDescriptor.vertexDescriptor = createVertexDescriptor() // 配置 MTLVertexDescriptor
         view.clearColor = MTLClearColor(red: 1, green: 1, blue: 1, alpha: 1)
         
@@ -193,17 +199,6 @@ class MetalRenderer: NSObject, ObservableObject, MTKViewDelegate {
         return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
     
-    
-    func getImageExtent() -> float2 {
-        let metalPoint = currentVertices.map { uniforms.noTranslationT * SIMD4<Float>(Float($0.x), Float($0.y), 0, 1) }
-            .map { vertex in
-                SIMD4<Float>(vertex.x / vertex.w, vertex.y / vertex.w, vertex.z / vertex.w, vertex.w / vertex.w)
-            }
-        let maxX = metalPoint.map { $0.x }.max() ?? 0
-        let maxY = metalPoint.map { $0.y }.max() ?? 0
-        
-        return float2(maxX, maxY)
-    }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
 //        if let texture = texture {
