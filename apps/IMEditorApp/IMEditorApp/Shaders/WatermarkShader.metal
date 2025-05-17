@@ -17,48 +17,40 @@ fragment float4 fragment_watermark(VertexOut in [[ stage_in ]],
                                    constant float2 &tileSize [[buffer(1)]],
                                    constant float &rotation [[buffer(2)]],
                                    constant float2 &watermarkSize [[buffer(3)]]) {
-//    constexpr sampler textureSampler (address::repeat, filter::linear);
-    constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
-    float2 uv = in.texCoord;
-    
-    // 将全屏 UV 转换为像素坐标
-    float2 pixelCoord = uv * imageSize;
-    
-    // 旋转（以屏幕中心为中心）
-    float2 center = imageSize * 0.5;
-    float2 pos = pixelCoord - center;
-    
-    float angle = 3.14 * 0 / 180; // e.g. 45°
-    float cosA = cos(angle);
-    float sinA = sin(angle);
-    
-    float2 rotated;
-    rotated.x = pos.x * cosA - pos.y * sinA;
-    rotated.y = pos.x * sinA + pos.y * cosA;
+    constexpr sampler textureSampler (
+           mag_filter::linear,
+           min_filter::linear,
+           address::repeat
+       );
 
-    // 平移回中心
-    rotated += center;
-    
-    // 计算水印纹理重复次数（tile）
-    float2 tiledUV = fmod(rotated / tileSize, 1.0);
-    
-    // ✅ 正确计算水印宽高比例
-    float aspect = watermarkSize.x / watermarkSize.y;  // 例如 1280/720 = 1.777
-    
-    // ✅ 通过缩放保持原比例（此处保持 Y 不变，X 根据比例缩放）
-    float2 aspectScale = float2(1.0 / aspect, 1.0);  // 例如 aspectScale.x = 0.5625
-    
-    // ✅ 居中缩放后再采样
-    float2 centeredUV = (tiledUV - 0.5) * aspectScale + 0.5;
-    
-    if (any(centeredUV < 0.0) || any(centeredUV > 1.0)) {
-        return float4(0.0); // 裁掉
-    }
+       float2 uv = in.texCoord;
+       float2 centeredUV = uv - 0.5;
 
-    // 采样水印纹理
-    float4 color = watermark.sample(textureSampler, tiledUV);
-    
-    // 控制透明度（可调）
-    return float4(color.rgb, color.a * 1);
+       // 旋转整个纹理坐标
+       float angle = rotation * 3.1415926 / 180.0;
+       float cosA = cos(angle);
+       float sinA = sin(angle);
+       float2 rotatedUV;
+       rotatedUV.x = centeredUV.x * cosA - centeredUV.y * sinA;
+       rotatedUV.y = centeredUV.x * sinA + centeredUV.y * cosA;
+       float2 finalUV = rotatedUV + 0.5;
+
+       // 计算图像上每个像素的物理位置
+       float2 pixelCoord = finalUV * imageSize;
+
+       // 根据 tileSize 平铺
+       float2 tiledUV = pixelCoord / tileSize;
+
+       // === 修复变形 ===
+       // 目标：保持水印单元是矩形，考虑其自身宽高比
+       float watermarkAspect = watermarkSize.x / watermarkSize.y;
+       float tileAspect = tileSize.x / tileSize.y;
+
+       // 比例差距修正（在采样前缩放坐标）
+       // 如果 tile 是正方形而 watermark 是长方形，就要按比例拉伸 UV
+       tiledUV.x /= watermarkAspect / tileAspect;
+
+       float4 color = watermark.sample(textureSampler, tiledUV);
+       return float4(color.rgb, color.a);
     
 }

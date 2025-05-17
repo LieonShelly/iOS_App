@@ -49,28 +49,6 @@ class WaterMarkRenderer: MetalRenderer {
     func loadWaterMark() {
         let textureLoader = MTKTextureLoader(device: device)
         watermarkTexture = try? textureLoader.newTexture(name: "logo", scaleFactor: 1.0, bundle: nil)
-        
-//        let halfW: Float = 2 / 2.0
-//        let halfH: Float = 2 / 2.0
-//
-//        let transform: float4x4 = .identity
-//
-//        let topLeft     = transform * SIMD4<Float>(-halfW,  halfH, 0, 1)
-//        let bottomLeft  = transform * SIMD4<Float>(-halfW, -halfH, 0, 1)
-//        let bottomRight = transform * SIMD4<Float>( halfW, -halfH, 0, 1)
-//        let topRight    = transform * SIMD4<Float>( halfW,  halfH, 0, 1)
-//
-//        let watermarkVertices: [Float] = [
-//            topLeft.x,     topLeft.y,     0.0, 0.0,
-//            bottomLeft.x,  bottomLeft.y,  0.0, 1.0,
-//            bottomRight.x, bottomRight.y, 1.0, 1.0,
-//            topRight.x,    topRight.y,    1.0, 0.0
-//        ]
-//        
-//        
-//        let indices: [UInt16] = [ 0, 1, 2,  2, 3, 0 ]  // 三角形索引
-
-        
     }
     
     override func setupVertices(for imageSize: CGSize, in viewSize: CGSize) {
@@ -81,8 +59,6 @@ class WaterMarkRenderer: MetalRenderer {
     
     private func setWatermarkTransform(for imageSize: CGSize, in viewSize: CGSize) {
         let viewAspect = Float(viewSize.width / viewSize.height)
-        let modelMatrix = float4x4.identity
-        
         let imageAspect = Float(imageSize.width / imageSize.height)
         
         // 在 Metal 坐标系下，View 是 [-1, 1]，我们用这个范围来计算图像显示区域
@@ -90,11 +66,9 @@ class WaterMarkRenderer: MetalRenderer {
         var displayHeight: Float = 0
 
         if imageAspect > viewAspect {
-            // 图像比视图宽 → 宽度对齐
             displayWidth = 2.0 // Metal 的 [-1, 1] 范围是 2 个单位宽
             displayHeight = displayWidth / imageAspect
         } else {
-            // 图像比视图高 → 高度对齐
             displayHeight = 2.0
             displayWidth = displayHeight * imageAspect
         }
@@ -121,8 +95,7 @@ class WaterMarkRenderer: MetalRenderer {
 
         watermarkVB = device.makeBuffer(bytes: quadVertices, length: quadVertices.count * MemoryLayout<Float>.size, options: [])
         watermarkIndexBuffer = device.makeBuffer(bytes: indices, length: indices.count * MemoryLayout<UInt16>.size, options: [])
-        watermarkUniform.transform = uniforms.transform
-         
+        
     }
     
     private func setupMainTextureTransform(imgSize: CGSize, viewSize: CGSize) {
@@ -144,6 +117,10 @@ class WaterMarkRenderer: MetalRenderer {
         }
         let cropProjection = float4x4(orthographicLeft: cropLeft, right: cropRight, bottom: cropBottom, top: cropTop, near: -1, far: 1)
         uniforms.transform = cropProjection * modelMatrix
+        
+        let zRotationMatrix = float4x4(angleZ: Float(Angle(degrees: 0).radians))
+        
+        watermarkUniform.transform = uniforms.transform * zRotationMatrix
     }
     
     override func draw(in view: MTKView) {
@@ -175,10 +152,10 @@ class WaterMarkRenderer: MetalRenderer {
         var imageSize = SIMD2<Float>(Float(imageSize.width), Float(imageSize.height))
         var watermarkSize = SIMD2<Float>(Float(watermarkTexture.width), Float(watermarkTexture.height))
         // 每个水印 tile 的尺寸（10x10 像素）
-        var tileSize = SIMD2<Float>(100, 100)
+        var tileSize = SIMD2<Float>(500, 500)
 
         // 旋转角度（45度）
-        var rotation: Float = 45.0
+        var rotation: Float = 45
         commandEncoder?.setFragmentBytes(&imageSize, length: MemoryLayout<SIMD2<Float>>.size, index: 0)
         commandEncoder?.setFragmentBytes(&tileSize, length: MemoryLayout<SIMD2<Float>>.size, index: 1)
         commandEncoder?.setFragmentBytes(&rotation, length: MemoryLayout<Float>.size, index: 2)
