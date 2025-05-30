@@ -36,6 +36,7 @@ import Foundation
 class SuperStorageModel: ObservableObject {
   /// The list of currently running downloads.
   @Published var downloads: [DownloadInfo] = []
+  @TaskLocal static var supportPartialDownloads = false
   
   func availableFiles() async throws -> [DownloadFile] {
     guard let url = URL(string: "http://localhost:8080/files/list") else {
@@ -87,7 +88,36 @@ class SuperStorageModel: ObservableObject {
       throw "Could not create the URL."
     }
     await addDownload(name: name)
-    return Data()
+    
+    let result: (downloadStream: URLSession.AsyncBytes, response: URLResponse)
+    if let offst = offset {
+      let urlRequest = URLRequest(url: url, offset: offst, length: size)
+      result = try await URLSession.shared.bytes(for: urlRequest)
+      guard (result.response as? HTTPURLResponse)?.statusCode == 206 else {
+        throw "The server responded with an error"
+      }
+    } else {
+      result = try await URLSession.shared.bytes(from: url)
+      guard (result.response as? HTTPURLResponse)?.statusCode == 200 else {
+        throw "The server responded with an error"
+      }
+    }
+    var asyncDownloadIterator = result.downloadStream.makeAsyncIterator()
+    var accmulator = ByteAccumulator(name: name, size: size)
+    while await !stopDownloads, !accmulator.checkCompleted() {
+      while !accmulator.isBatchCompleted, let byte = try await asyncDownloadIterator.next() {
+        accmulator.append(byte)
+      }
+      let progress = accmulator.progress
+      Task.detached(priority: .medium) {
+        await self.updateDownload(name: name, progress: progress)
+      }
+      print(accmulator.description)
+    }
+    if await stopDownloads, !Self.supportPartialDownloads {
+      throw CancellationError()
+    }
+    return accmulator.data
   }
 
   /// Downloads a file using multiple concurrent connections, returns the final content, and updates the download progress.
@@ -102,7 +132,13 @@ class SuperStorageModel: ObservableObject {
     let total = 4
     let parts = (0..<total).map { partInfo(index: $0, of: total) }
     // Add challenge code here.
-    return Data()
+    
+    async let part1 = downloadWithProgress(fileName: file.name, name: parts[0].name, size: parts[0].size, offset: parts[0].offset)
+    async let part2 = downloadWithProgress(fileName: file.name, name: parts[1].name, size: parts[1].size, offset: parts[1].offset)
+    async let part3 = downloadWithProgress(fileName: file.name, name: parts[2].name, size: parts[2].size, offset: parts[2].offset)
+    async let part4 = downloadWithProgress(fileName: file.name, name: parts[3].name, size: parts[3].size, offset: parts[3].offset)
+    
+    return try await [part1, part2, part3, part4].reduce(Data(), +)
   }
 
   /// Flag that stops ongoing downloads.
