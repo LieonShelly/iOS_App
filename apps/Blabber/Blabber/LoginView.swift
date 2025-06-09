@@ -62,5 +62,30 @@ struct LoginView: View {
       .padding(.horizontal)
     }
     .statusBar(hidden: true)
+    .task {
+      let t = Task {
+        do {
+          try await withThrowingTaskGroup(of: Int.self) { group in
+            group.addTask {
+              try await workk()
+            }
+            group.addTask {
+              try await workk()
+            }
+           try await group.waitForAll()
+          }
+        } catch {
+          print("Error:\(error)")
+        }
+      }
+      await Task.sleep(NSEC_PER_SEC)
+      t.cancel()
+    }
+  }
+  
+  func workk() async throws -> Int {
+    try await Task.sleep(nanoseconds: 3 * NSEC_PER_SEC)
+    print("Done")
+    return 1
   }
 }

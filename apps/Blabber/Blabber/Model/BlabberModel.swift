@@ -208,3 +208,110 @@ extension AsyncSequence {
     }
   }
 }
+
+import Combine
+
+extension Publisher {
+  var asAsyncStream: AsyncThrowingStream<Output, Error> {
+    AsyncThrowingStream(Output.self) { continuation in
+      let cancelable = sink { completion in
+        switch completion {
+        case .finished:
+          continuation.finish()
+        case .failure(let error):
+          continuation.finish(throwing: error)
+        }
+      } receiveValue: { output in
+        continuation.yield(output)
+      }
+      continuation.onTermination = { @Sendable _ in
+        cancelable.cancel()
+      }
+    }
+  }
+}
+
+enum Test {
+  case test
+  func test() async throws {
+    let stream = Timer.publish(every: 1, on: .main, in: .default)
+      .autoconnect()
+      .asAsyncStream
+    for try await v in stream {
+      print(v)
+    }
+  }
+  
+  func testNotification() {
+   let task = Task {
+      let backgroundNotifications = NotificationCenter.default.notifications(named: UIApplication.didEnterBackgroundNotification)
+      for await notification in backgroundNotifications {
+        print(notification)
+      }
+    }
+    
+    // .....
+    
+    task.cancel()
+  }
+  
+  func asyncMethod() async throws -> Bool {
+    try await Task.sleep(for: .seconds(1))
+    return true
+  }
+  
+  
+  func work() async throws -> String {
+    var s = ""
+    for c in "Hello" {
+      //      guard Task.isCancelled else { return s}
+      try Task.checkCancellation()
+      await Task.sleep(NSEC_PER_SEC)
+      print("Append:\(c)")
+      s.append(c)
+    }
+    return s
+  }
+  
+  func work(_ text: String) async throws -> String {
+    var s = ""
+    for c in text {
+      if Task.isCancelled {
+        print("Cancelled: \(text)")
+      }
+      try await Task.sleep(for: .seconds(1))
+      print("Append:\(c)")
+      s.append(c)
+    }
+    return s
+  }
+  
+  func group() async  {
+    do {
+      let value: String = try await withThrowingTaskGroup(of: String.self) { group in
+        group.addTask {
+          try await withThrowingTaskGroup(of: String.self) { inner in
+            inner.addTask {
+              try await work("hello")
+            }
+            inner.addTask {
+              try await work("world!")
+            }
+            try await Task.sleep(for: .seconds(1))
+            inner.cancelAll()
+            return try await inner.reduce([], { $0 + [$1]}).joined(separator: " ")
+          }
+        }
+        group.addTask {
+          try await work("Swift Concurrency")
+        }
+        return try await group.reduce([], {$0 + [$1]}).joined(separator: " ")
+      }
+      print(value)
+    } catch {
+      print("Error:\(error)")
+    }
+  }
+}
+
+
