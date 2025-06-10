@@ -10,10 +10,12 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var viewModel: HomeViewModel
     @StateObject var littleJohnModel: LittleJohnModel
+    @StateObject var storageModel: SuperStorageModel
     
     init(viewModel: HomeViewModel) {
         self.viewModel = viewModel
         self._littleJohnModel = .init(wrappedValue: LittleJohnModel())
+        self._storageModel = .init(wrappedValue: SuperStorageModel())
     }
     
     var body: some View {
@@ -23,6 +25,8 @@ struct ContentView: View {
                     switch item.page {
                     case .whyModernSwiftConcurrency:
                         WhyModernSwiftConcurrencyPage(model: littleJohnModel)
+                    case .getStartedWitgAsyncWait:
+                      StorageListView(model: storageModel)
                     default: EmptyView()
                     }
                 } label: {
