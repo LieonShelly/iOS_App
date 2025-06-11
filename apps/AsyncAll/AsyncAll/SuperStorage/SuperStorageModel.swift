@@ -12,6 +12,7 @@ class SuperStorageModel: ObservableObject {
   @Published var downloads: [DownloadInfo] = []
   @TaskLocal static var supportsPartrialDownloads = false
   
+
   func download(file: DownloadFile) async throws -> Data {
     guard let url = URL(string: "http://localhost:8080/files/download?\(file.name)") else {
       throw "Could not create the URL."
