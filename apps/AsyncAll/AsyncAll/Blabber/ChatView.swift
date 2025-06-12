@@ -37,13 +37,34 @@ struct ChatView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       HStack {
-        Button(action: {}, label: {
+        Button(action: {
+          Task {
+            do {
+              try await model.shareLocation()
+            } catch is CancellationError {
+              
+            } catch {
+              lastErrorMessage = error.localizedDescription
+            }
+          }
+        }, label: {
           Image(systemName: "location.circle.fill")
             .font(.title)
             .foregroundColor(Color.gray)
         })
         
-        Button(action: {}, label: {
+        Button(action: {
+          Task {
+            do {
+              let countDownMessage = message
+              message = ""
+             try await model.countdown(to: countDownMessage)
+            } catch {
+              lastErrorMessage = error.localizedDescription
+            }
+          }
+        
+        }, label: {
           Image(systemName: "timer")
             .font(.title)
             .foregroundColor(Color.gray)

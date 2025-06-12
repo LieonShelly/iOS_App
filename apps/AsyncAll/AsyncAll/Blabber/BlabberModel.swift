@@ -10,15 +10,46 @@ import CoreLocation
 import Combine
 import UIKit
 
+
 @MainActor
 class BlabberModel: ObservableObject {
   var username: String = ""
   var urlSession = URLSession.shared
   @Published var message: [Message] = []
+  private let manager = CLLocationManager()
+  private var delegate: ChatLocationDelegate?
   
   nonisolated init() {}
   
-  func shareLocation() async throws { }
+  func shareLocation() async throws {
+    let location: CLLocation = try await
+    withCheckedThrowingContinuation {[weak self] continuation in
+      guard let self else { return }
+      self.delegate = ChatLocationDelegate(manager: manager, continuation: continuation)
+      if manager.authorizationStatus == .authorizedWhenInUse {
+        manager.startUpdatingLocation()
+      }
+    }
+    print(location.description)
+    manager.stopUpdatingLocation()
+    delegate = nil
+    let address: String = try await withCheckedThrowingContinuation { continuation in
+      AddressEncoder.addressFor(location: location) { address, error in
+        switch (address, error) {
+        case (nil, let error?):
+          continuation.resume(throwing: error)
+        case (let address?, nil):
+          continuation.resume(returning: address)
+        case (nil, nil):
+          continuation.resume(throwing: "Address encoding failed")
+        case let (address?, error?):
+          continuation.resume(returning: address)
+          print(error)
+        }
+      }
+    }
+    try await say("📍 \(address)")
+  }
   
   func chat() async throws {
     guard
@@ -95,6 +126,28 @@ class BlabberModel: ObservableObject {
       throw "The server responded with an error"
     }
   }
+    
+  func countdown(to message: String) async throws {
+    guard !message.isEmpty else { return }
+    var countdown = 3
+    let counter = AsyncStream<String> {
+      guard countdown >= 0 else { return nil }
+      do {
+        try await Task.sleep(for: .seconds(1))
+      } catch {
+        return nil
+      }
+      defer { countdown -= 1}
+      if countdown == 0 {
+        return "🎉 " + message
+      } else {
+        return "\(countdown)..."
+      }
+    }
+    try await counter.forEach { element in
+      try await say(element)
+    }
+  }
   
   
   private var liveURLSession: URLSession = {
@@ -112,6 +165,14 @@ extension NotificationCenter {
       NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { notification in
         continuation.yield(notification)
       }
+    }
+  }
+}
+
+extension AsyncSequence {
+  func forEach(_ body: (Element) async throws -> Void) async throws {
+    for try await element in self {
+      try await body(element)
     }
   }
 }
