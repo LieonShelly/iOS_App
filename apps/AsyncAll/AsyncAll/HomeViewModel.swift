@@ -41,7 +41,7 @@ enum Page: String {
     case getStartedWitgAsyncWait
     case asyncsequence
     case asyncStream
-    case intermediateAsyncAwaiCheckedcontinuation
+    case intermediateAsyncAwaitCheckedcontinuation
     case testAyncchronous
     case taskGroup
     case actors

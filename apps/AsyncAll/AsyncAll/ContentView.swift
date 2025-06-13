@@ -26,11 +26,11 @@ struct ContentView: View {
                     case .whyModernSwiftConcurrency:
                         WhyModernSwiftConcurrencyPage(model: littleJohnModel)
                     case .getStartedWitgAsyncWait:
-                      StorageListView(model: storageModel)
-                    case .asyncsequence, .asyncStream:
-                      BlabberLoginView()
+                        StorageListView(model: storageModel)
+                    case .asyncsequence, .asyncStream, .intermediateAsyncAwaitCheckedcontinuation:
+                        BlabberLoginView()
                     case .taskGroup:
-                      SkyView()
+                        SkyView()
                     default: EmptyView()
                     }
                 } label: {
@@ -44,11 +44,9 @@ struct ContentView: View {
             }
             .navigationTitle("AsyncDemo")
         }
-      
+        
     }
 }
-
-
 
 #Preview {
     ContentView(viewModel: HomeViewModel())
