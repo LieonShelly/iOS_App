@@ -27,8 +27,10 @@ struct ContentView: View {
                         WhyModernSwiftConcurrencyPage(model: littleJohnModel)
                     case .getStartedWitgAsyncWait:
                       StorageListView(model: storageModel)
-                    case .asyncsequence:
+                    case .asyncsequence, .asyncStream:
                       BlabberLoginView()
+                    case .taskGroup:
+                      SkyView()
                     default: EmptyView()
                     }
                 } label: {
