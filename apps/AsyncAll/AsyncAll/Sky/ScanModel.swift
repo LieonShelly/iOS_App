@@ -25,7 +25,7 @@ class ScanModel: ObservableObject {
         started = Date()
         
         try await withThrowingTaskGroup(of: Result<String, Error>.self) { [unowned self] group in
-            let batchSize = 4
+            let batchSize = 1
             
             for index in 0..<batchSize {
                 group.addTask {
@@ -40,9 +40,10 @@ class ScanModel: ObservableObject {
             for try await result in group {
                 switch result {
                 case .success(let result):
-                    print("Completed:\(result)")
+                    print("Completed:\(result))")
                 case .failure(let error):
                     print("Failed: \(error.localizedDescription)")
+                    group.cancelAll()
                 }
                 
                 // 3

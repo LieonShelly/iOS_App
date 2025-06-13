@@ -59,7 +59,7 @@ actor UnreloableAPI {
   
   func action(failingEvery: Int) throws {
     counter += 1
-    if counter & failingEvery == 0 {
+    if counter % failingEvery == 0 {
       counter = 0
       throw Error()
     }

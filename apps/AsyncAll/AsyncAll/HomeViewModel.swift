@@ -17,7 +17,7 @@ class HomeViewModel: ObservableObject {
             .init(page: .getStartedWitgAsyncWait),
             .init(page: .asyncsequence),
             .init(page: .asyncStream),
-            .init(page: .intermediateAsyncAwaiCheckedcontinuation),
+            .init(page: .intermediateAsyncAwaitCheckedcontinuation),
             .init(page: .testAyncchronous),
             .init(page: .taskGroup),
             .init(page: .actors),

@@ -17,8 +17,9 @@ struct ScanTask: Identifiable {
     }
     
     func run() async throws -> String {
+        try Task.checkCancellation()
         try await UnreloableAPI.shared.action(failingEvery: 10)
-        await Task(priority: .medium) {
+        await Task(priority: .medium) { // 指定任务的优先级
             await withUnsafeContinuation { continuation in
                 Thread.sleep(forTimeInterval: 1)
                 continuation.resume()
