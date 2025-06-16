@@ -31,6 +31,8 @@ struct ContentView: View {
                         BlabberLoginView()
                     case .taskGroup:
                         SkyView()
+                    case .actors:
+                        EmojiArtHomeView()
                     default: EmptyView()
                     }
                 } label: {
