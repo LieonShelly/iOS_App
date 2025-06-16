@@ -42,6 +42,7 @@ struct EmojiArtLoadingView: View {
             guard model.imageFeed.isEmpty else { return }
             do {
                 try await model.loadImages()
+                try await model.verifyImages()
                 withAnimation {
                     isVerified = true
                 }
@@ -57,7 +58,7 @@ struct EmojiArtLoadingView: View {
         .onReceive(timer) { _ in
             guard !model.imageFeed.isEmpty else { return }
             Task {
-                progress = Double(model.verifiedCount) / Double(model.imageFeed.count)
+                progress = await Double(model.verifiedCount) / Double(model.imageFeed.count)
             }
         }
     }

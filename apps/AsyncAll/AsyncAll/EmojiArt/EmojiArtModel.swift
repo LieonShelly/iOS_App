@@ -7,11 +7,11 @@
 
 import Foundation
 
-class EmojiArtModel: ObservableObject {
+actor EmojiArtModel: ObservableObject {
     @Published @MainActor private(set) var imageFeed: [ImageFile] = []
     private(set) var verifiedCount = 0
     
-    func loadImages() async throws {
+    nonisolated func loadImages() async throws {
         await MainActor.run {
             imageFeed.removeAll()
         }
@@ -30,23 +30,21 @@ class EmojiArtModel: ObservableObject {
             imageFeed = list
         }
     }
-}
-
-
-
-struct ImageFile: Codable, Identifiable, Equatable {
-    let id: UUID
-    let name: String
-    let url: String
-    let price: Double
-    let checksum: String
     
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = UUID()
-        name = try container.decode(String.self, forKey: .name)
-        url = try container.decode(String.self, forKey: .url)
-        price = try container.decode(Double.self, forKey: .price)
-        checksum = try container.decode(String.self, forKey: .checksum)
+    nonisolated func verifyImages() async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+          await imageFeed.forEach { file in
+                group.addTask { [unowned self] in
+                    try await Checksum.verify(file.checksum)
+                    await self.increaseVerifiedCount()
+                    print("verifiedCount:\(await self.verifiedCount)")
+                }
+            }
+           try await group.waitForAll()
+        }
+    }
+    
+    private func increaseVerifiedCount() {
+        verifiedCount += 1
     }
 }
