@@ -37,7 +37,6 @@ actor EmojiArtModel: ObservableObject {
                 group.addTask { [unowned self] in
                     try await Checksum.verify(file.checksum)
                     await self.increaseVerifiedCount()
-                    print("verifiedCount:\(await self.verifiedCount)")
                 }
             }
            try await group.waitForAll()

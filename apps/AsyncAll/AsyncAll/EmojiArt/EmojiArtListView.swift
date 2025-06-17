@@ -73,23 +73,12 @@ struct EmojiArtListView: View {
                 selected = nil
             }, content: {
                 if let selected {
-                    
+                    DetailsView(file: selected)
                 }
             })
             .onChange(of: selected) { oldValue, newValue in
                 isDisplayingPreview = newValue != nil
             }
         }
-    }
-}
-
-
-import SwiftUI
-
-struct ThumbImage: View {
-    let file: ImageFile
-    
-    var body: some View {
-        Text("ThumbImage")
     }
 }

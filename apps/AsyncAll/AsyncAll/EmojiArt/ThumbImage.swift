@@ -1,0 +1,39 @@
+//
+//  ThumbImage.swift
+//  AsyncAll
+//
+//  Created by Renjun Li on 2025/6/17.
+//
+
+
+import SwiftUI
+
+struct ThumbImage: View {
+    let file: ImageFile
+    @State var image = UIImage()
+    @State var overlay = ""
+    @EnvironmentObject var imageLoader: ImageLoader
+    
+    @MainActor func updateImage(_ image: UIImage) {
+        self.image = image
+    }
+    
+    var body: some View {
+        Image(uiImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .foregroundStyle(.gray)
+            .overlay {
+                if !overlay.isEmpty {
+                    Image(systemName: overlay)
+                }
+            }
+            .task {
+                guard let image = try? await imageLoader.image(file.url) else {
+                    overlay = "camera.metering.unknown"
+                    return
+                }
+                updateImage(image)
+            }
+    }
+}

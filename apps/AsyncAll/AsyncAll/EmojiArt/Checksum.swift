@@ -12,6 +12,7 @@ enum Checksum {
     
     static func verify(_ checksum: String) async throws {
         let duration = Double.random(in: 0.5...2.5)
+        print("Threa-verify:\(Thread.current)")
         try await Task.sleep(for: .seconds(duration))
     }
 }
