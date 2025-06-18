@@ -41,6 +41,7 @@ struct EmojiArtLoadingView: View {
         .task {
             guard model.imageFeed.isEmpty else { return }
             do {
+                try await ImageDatabase.shared.setUp()
                 try await model.loadImages()
                 try await model.verifyImages()
                 withAnimation {
@@ -63,3 +64,6 @@ struct EmojiArtLoadingView: View {
         }
     }
 }
+
+
+

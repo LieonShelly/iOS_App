@@ -25,6 +25,7 @@ actor ImageLoader: ObservableObject {
         if let cached = cache[serverPath] {
             switch cached {
             case .completed(let image):
+                inMemoryAccessCounter += 1
                 return image
             case .inProgress(let task):
                 return try await task.value
@@ -54,5 +55,28 @@ actor ImageLoader: ObservableObject {
     
     func clear() {
         cache.removeAll()
+    }
+    
+    @MainActor private(set) var inMemoryAccess: AsyncStream<Int>?
+    
+    private var inMemoryAccessContinuation: AsyncStream<Int>.Continuation?
+    
+    private var inMemoryAccessCounter = 0 {
+        didSet {
+            inMemoryAccessContinuation?.yield(inMemoryAccessCounter)
+        }
+    }
+    
+    func setUp() async {
+        let accessStream = AsyncStream<Int> { continuation in
+            inMemoryAccessContinuation = continuation
+        }
+        await MainActor.run {
+            inMemoryAccess = accessStream
+        }
+    }
+    
+    deinit {
+        inMemoryAccessContinuation?.finish()
     }
 }

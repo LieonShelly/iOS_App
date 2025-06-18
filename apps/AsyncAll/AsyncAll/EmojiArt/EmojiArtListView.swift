@@ -79,6 +79,8 @@ struct EmojiArtListView: View {
             .onChange(of: selected) { oldValue, newValue in
                 isDisplayingPreview = newValue != nil
             }
+            
+            BottomToolbar()
         }
     }
 }
