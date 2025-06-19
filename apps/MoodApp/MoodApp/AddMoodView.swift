@@ -11,8 +11,8 @@ import SwiftUI
 struct AddMoodView: View {
     enum Constants {
         static let headerH: CGFloat = 150
-        static let containerHMaxPadding: CGFloat = 40
-        static let containerHMinPadding: CGFloat = 0
+        static let containerMaxPadding: CGFloat = 40
+        static let containerMinPadding: CGFloat = 0
         static let containerMaxTopPadding: CGFloat = 80
     }
     @State private var expand: Bool = false
@@ -22,7 +22,7 @@ struct AddMoodView: View {
             headerView
         }
       
-        .frame(width: expand ? UIScreen.main.bounds.width : UIScreen.main.bounds.width - Constants.containerHMaxPadding *  2)
+        .frame(width: expand ? UIScreen.main.bounds.width : UIScreen.main.bounds.width - Constants.containerMaxPadding *  2)
         .frame(height: expand ? UIScreen.main.bounds.height - Constants.containerMaxTopPadding: Constants.headerH)
         .background(content: {
             RoundedRectangle(cornerRadius: 10)
@@ -34,43 +34,51 @@ struct AddMoodView: View {
     }
     
     var emojiView: some View {
-        HStack {
-            
-            RoundedRectangle(cornerSize: .init(width: 10, height: 10))
-                .fill(.yellow)
-                .frame(width: 40, height: 40)
-                .onTapGesture {
-                    expand.toggle()
-                }
-
-            Button {
-                expand.toggle()
-            } label: {
-                RoundedRectangle(cornerSize: .init(width: 10, height: 10))
-                    .fill(.red)
-                    .frame(width: 40, height: 40)
-            }
-            
-            Button {} label: {
+        GeometryReader { proxy in
+            let iconW: CGFloat = 40
+            let horizontInset: CGFloat = 20
+            let spacing = (proxy.size.width - iconW * 5 - horizontInset * 2) / 4
+            HStack(spacing: spacing) {
                 RoundedRectangle(cornerSize: .init(width: 10, height: 10))
                     .fill(.yellow)
-                    .frame(width: 40, height: 40)
-            }
-            
-            Button {} label: {
+                    .frame(width: iconW, height: iconW)
+                    .onTapGesture {
+                        expand.toggle()
+                    }
+
                 RoundedRectangle(cornerSize: .init(width: 10, height: 10))
-                    .fill(.purple)
-                    .frame(width: 40, height: 40)
+                    .fill(.red)
+                    .fill(expand ? Color.green : Color.red)
+                    .frame(width: iconW, height: iconW)
+                    .onTapGesture {
+                        expand.toggle()
+                    }
+                
+                Button {} label: {
+                    RoundedRectangle(cornerSize: .init(width: 10, height: 10))
+                        .fill(.yellow)
+                        .frame(width: iconW, height: iconW)
+                }
+                
+                Button {} label: {
+                    RoundedRectangle(cornerSize: .init(width: 10, height: 10))
+                        .fill(.purple)
+                        .frame(width: iconW, height: iconW)
+                }
+                
+                Button {} label: {
+                    RoundedRectangle(cornerSize: .init(width: 10, height: 10))
+                        .fill(.pink)
+                        .frame(width: iconW, height: iconW)
+                }
+                
             }
-            
-            Button {} label: {
-                RoundedRectangle(cornerSize: .init(width: 10, height: 10))
-                    .fill(.pink)
-                    .frame(width: 40, height: 40)
-            }
-            
+            .padding(.vertical, 20)
+            .padding(.horizontal, horizontInset)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .padding()
+        .frame(height: 70)
+       
     }
     
     var headerView: some View {
@@ -104,4 +112,3 @@ struct AddMoodView: View {
         .frame(height: expand ? UIScreen.main.bounds.height - Constants.containerMaxTopPadding : 0)
     }
 }
-

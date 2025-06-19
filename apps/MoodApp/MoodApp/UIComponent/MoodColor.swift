@@ -12,6 +12,7 @@ class AppBundle { }
 
 enum MoodColor: String {
     case primary
+    case backgroundGray = "background-gray"
     case backgroundWhite = "background-white"
     case backgroundYellow = "background-yellow"
     case textPrimary = "text-primary"

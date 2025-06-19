@@ -9,11 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        ZStack {
-            Color.gray.frame(height: UIScreen.main.bounds.height)
-            AddMoodView()
-        }
-        .ignoresSafeArea()
+        EmotionsView()
     }
 }
 
