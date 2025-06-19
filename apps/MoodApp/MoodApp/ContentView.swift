@@ -9,18 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!").foregroundStyle(MoodColor.primary.color)
-            Text("Hello, world!").foregroundStyle(MoodColor.textPrimary.color)
-            Text("Hello, world!").foregroundStyle(MoodColor.textSecondary.color)
-            Text("Hello, world!").foregroundStyle(MoodColor.textThird.color)
-            Text("Hello, world!").foregroundStyle(MoodColor.textForth.color)
-            Text("Hello, world!").foregroundStyle(MoodColor.textDisable.color)
+        ZStack {
+            Color.gray.frame(height: UIScreen.main.bounds.height)
+            AddMoodView()
         }
-        .padding()
+        .ignoresSafeArea()
     }
 }
 
