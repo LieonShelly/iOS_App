@@ -12,7 +12,7 @@ struct EmotionsView: View {
     
     var body: some View {
         ScrollView {
-            TagListView(tags: sampleTags)
+            TagListView(tags: sampleTags.map { Tag(value: $0) })
                 .padding()
         }
     }
