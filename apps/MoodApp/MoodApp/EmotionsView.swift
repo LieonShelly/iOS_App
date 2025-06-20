@@ -12,20 +12,21 @@ struct EmotionsView: View {
     
     var body: some View {
         ScrollView {
-            TagListView(tags: sampleTags.map { Tag(value: $0) })
+            TagListView(
+                tags: sampleTags.map { Tag(value: $0) },
+                textColor: .textPrimary,
+                backgroundColor: .backgroundGray,
+                selectedTextColor: .backgroundWhite,
+                selectedBackgroundColor: MoodColor.primary.color,
+                cornorRadius: 10,
+                font: .moodFont(forTextStyle: .titleTiny)
+            )
                 .padding()
         }
     }
     
 }
 
-
-extension String {
-    func size(withFont font: UIFont) -> CGSize {
-        let attributes = [NSAttributedString.Key.font: font]
-        return (self as NSString).size(withAttributes: attributes)
-    }
-}
 
 #Preview {
     EmotionsView()

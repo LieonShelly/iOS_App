@@ -25,3 +25,9 @@ public extension UIApplication {
     }
 }
 
+public extension String {
+    func size(withFont font: UIFont) -> CGSize {
+        let attributes = [NSAttributedString.Key.font: font]
+        return (self as NSString).size(withAttributes: attributes)
+    }
+}

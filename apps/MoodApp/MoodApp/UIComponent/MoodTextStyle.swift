@@ -86,6 +86,40 @@ enum MoodTextStyle {
         }
     }
     
+    var uifontWight: UIFont.Weight {
+        switch self {
+        case .titleTiny:
+                .regular
+        case .titleExtraSmall:
+                .regular
+        case .titleSmall:
+                .regular
+
+        case .titleMedium:
+                .medium
+        case .titleLarge:
+                .semibold
+        case .titleExtraLarge:
+                .bold
+        case .titleHuge:
+                .heavy
+        case .bodyExtraSmall:
+                .regular
+        case .bodyExtraSmallBold:
+                .semibold
+        case .bodySmall:
+                .regular
+        case .bodySmallBold:
+                .medium
+        case .bodyMedium:
+                .medium
+        case .bodyMediumBold:
+                .semibold
+        case .bodyLarge:
+                .bold
+        }
+    }
+    
     static let spacing: CGFloat = 8
 }
 
@@ -98,6 +132,13 @@ extension Font {
         
 //        return Font.custom(fontName, fixedSize: descriptor.pointSize)
         return Font.system(size: style.fontSize(), weight: style.weight, design: .default)
+    }
+}
+
+extension UIFont {
+    
+    static func moodFont(forTextStyle style: MoodTextStyle) -> UIFont {
+        return UIFont.systemFont(ofSize: style.fontSize(), weight: style.uifontWight)
     }
 }
 
