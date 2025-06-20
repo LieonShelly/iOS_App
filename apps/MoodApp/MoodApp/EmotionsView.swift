@@ -8,10 +8,14 @@
 import SwiftUI
 
 struct EmotionsView: View {
-    let sampleTags = ["VisionKitVisionKitVisionKitVisionKit", "VisionKitVisionKitVisionKitVisionKit", "SwiftUI", "Combine", "CoreData", "Metal", "UIKit", "UIKit", "VisionKitVisionKitVisionKitVisionKit", "RealityKit"]
+    let sampleTags = ["Excited", "Relaxed", "Proud", "Hopeful", "Happy", "Enthusiatic", "Refreshed", "Gloomy", "Lonely", "Anxious", "Sad", "Tired", "Annoyed", "Burdensome", "Bored", "Stressed"]
     
     var body: some View {
-        ScrollView {
+        VStack(spacing: 30) {
+            Text("Emotions")
+                .foregroundStyle(MoodColor.textPrimary.color)
+                .font(.moodFont(forTextStyle: .titleTiny))
+            
             TagListView(
                 tags: sampleTags.map { Tag(value: $0) },
                 textColor: .textPrimary,
@@ -19,14 +23,12 @@ struct EmotionsView: View {
                 selectedTextColor: .backgroundWhite,
                 selectedBackgroundColor: MoodColor.primary.color,
                 cornorRadius: 10,
-                font: .moodFont(forTextStyle: .titleTiny)
+                font: .moodFont(forTextStyle: .bodySmall)
             )
-                .padding()
+            .padding(.horizontal, 20)
         }
     }
-    
 }
-
 
 #Preview {
     EmotionsView()

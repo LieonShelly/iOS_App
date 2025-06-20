@@ -10,10 +10,10 @@ import SwiftUI
 
 struct AddMoodView: View {
     enum Constants {
-        static let headerH: CGFloat = 150
+        static let headerH: CGFloat = 120
         static let containerMaxPadding: CGFloat = 40
         static let containerMinPadding: CGFloat = 0
-        static let containerMaxTopPadding: CGFloat = 80
+        static let containerMaxTopPadding: CGFloat = 100
     }
     @State private var expand: Bool = false
     var body: some View {
@@ -21,16 +21,15 @@ struct AddMoodView: View {
             contentView
             headerView
         }
-      
         .frame(width: expand ? UIScreen.main.bounds.width : UIScreen.main.bounds.width - Constants.containerMaxPadding *  2)
-        .frame(height: expand ? UIScreen.main.bounds.height - Constants.containerMaxTopPadding: Constants.headerH)
+        .frame(height: expand ? UIScreen.main.bounds.height - Constants.containerMaxTopPadding: Constants.headerH + LayoutConstants.safeArea.bottom)
         .background(content: {
             RoundedRectangle(cornerRadius: 10)
                 .fill(.clear)
         })
         .frame(maxHeight: .infinity, alignment: .bottom)
         .animation(.easeInOut(duration: 0.5), value: expand)
-       
+        .ignoresSafeArea()
     }
     
     var emojiView: some View {
@@ -85,6 +84,8 @@ struct AddMoodView: View {
         GeometryReader { proxy in
             VStack(spacing: .zero) {
                 Text("What is your mood")
+                    .foregroundStyle(MoodColor.textPrimary.color)
+                    .font(.moodFont(forTextStyle: .titleSmall))
                     .padding(.top, 20)
                emojiView
             }
@@ -100,7 +101,9 @@ struct AddMoodView: View {
     var contentView: some View {
         GeometryReader { proxy in
             VStack {
-                FontPanel()
+                emotionsView
+                
+                Spacer()
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .background(MoodColor.backgroundWhite.color)
@@ -110,5 +113,10 @@ struct AddMoodView: View {
            
         }
         .frame(height: expand ? UIScreen.main.bounds.height - Constants.containerMaxTopPadding : 0)
+    }
+    
+    var emotionsView: some View {
+        EmotionsView()
+            .padding(.top, Constants.headerH)
     }
 }
