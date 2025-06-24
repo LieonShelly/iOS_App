@@ -109,29 +109,26 @@ The following diagram illustrates the state transition logic within the `caculat
 
 ```mermaid
 graph TD;
-    subgraph "caculateOffset State Logic"
+    subgraph "caculateOffset Logic Flow"
         Start[caculateOffset called] --> SwitchState{switch pullToRefresh.state};
         
-        SwitchState -- .idle --> IsIdle["state is .idle"];
-        IsIdle --> ActionIdle["Set startOffset = currentOffset<br/>Set state = .pulling"];
+        SwitchState -- ".idle" --> ActionIdle["Set startOffset = currentOffset<br/>Set state = .pulling"];
         ActionIdle --> End[End];
 
-        SwitchState -- .pulling --> IsPulling["state is .pulling"];
-        IsPulling --> CheckProgress{progress < 1?};
+        SwitchState -- ".pulling" --> CheckProgress{"progress < 1?"};
         
-        CheckProgress -- Yes --> UpdateProgress["Update progress value"];
+        CheckProgress -- "Yes" --> UpdateProgress["Update progress value"];
         UpdateProgress --> End;
         
-        CheckProgress -- No --> TriggerRefresh["Set state = .ongoing<br/>Reset progress = 0"];
-        TriggerRefresh --> AsyncTask["<strong>Launch Async Task</strong>"];
-        AsyncTask --> AwaitUpdate["1. await update()"];
-        AwaitUpdate --> SetPreparingFinish["2. Set state = .preparingFinish"];
-        SetPreparingFinish --> WaitReturn["3. Wait (timeForTheBallToReturn)"];
-        WaitReturn --> SetFinishing["4. Set state = .finishing"];
-        SetFinishing --> WaitRollout["5. Wait (timeForTheBallToRollOut)"];
-        WaitRollout --> SetIdle["6. Set state = .idle<br/>   Reset startOffset = 0"];
+        CheckProgress -- "No" --> TriggerRefresh["Set state = .ongoing<br/>Reset progress = 0"];
+        TriggerRefresh --> AsyncTask["Launch Async Task"];
+        AsyncTask --> AwaitUpdate["await update()"];
+        AwaitUpdate --> SetPreparingFinish["Set state = .preparingFinish"];
+        SetPreparingFinish --> WaitReturn["Wait (timeForTheBallToReturn)"];
+        WaitReturn --> SetFinishing["Set state = .finishing"];
+        SetFinishing --> WaitRollout["Wait (timeForTheBallToRollOut)"];
+        WaitRollout --> SetIdle["Set state = .idle<br/>   Reset startOffset = 0"];
         SetIdle --> End;
-
-        SwitchState -- default --> End;
+        SwitchState -- "default" --> End;
     end
 ``` 
