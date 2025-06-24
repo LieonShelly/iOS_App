@@ -16,6 +16,7 @@ struct AddMoodView: View {
         static let containerMaxTopPadding: CGFloat = 100
     }
     @State private var expand: Bool = false
+    
     var body: some View {
         ZStack(alignment: .top) {
             contentView
@@ -119,4 +120,6 @@ struct AddMoodView: View {
         EmotionsView()
             .padding(.top, Constants.headerH)
     }
+    
 }
+

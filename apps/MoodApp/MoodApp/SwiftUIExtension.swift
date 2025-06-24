@@ -36,3 +36,10 @@ struct RoundedRectangleWithCorners: Shape {
         return Path(path.cgPath)
     }
 }
+
+
+extension Color {
+  static var randam: Color {
+        .init(red: Double.random(in: 0..<255) / 255, green: Double.random(in: 0..<255) / 255, blue: Double.random(in: 0..<255) / 255 )
+    }
+}
