@@ -12,32 +12,71 @@ struct ContentView: View {
     @State var pullToRefresh = PullToRefresh(progress: 0, state: .idle)
     private let ease: Animation = .easeInOut(duration: Constants.timeForTheBallToReturn)
     private let spring: Animation = .interpolatingSpring(stiffness: 80, damping: 4)
+    @State var filterShown = false
+    @State var selectedSports: Set<Sport> = []
+    @State var unfilteredEvents: [Event] = []
     
     var body: some View {
-        ScrollView {
-            ScrollViewGeometryReader(pullToRefresh: $pullToRefresh) {
-                await update()
-                print("Update")
+        NavigationView {
+            ScrollView {
+                ScrollViewGeometryReader(pullToRefresh: $pullToRefresh) {
+                    await update()
+                }
+                
+                ZStack(alignment: .top) {
+                    BallView(pullToRefresh: $pullToRefresh)
+                    VStack {
+                        FilterView(selectedSports: $selectedSports, isShown: filterShown)
+                            .padding(.top)
+                            .zIndex(1)
+                        LazyVStack {
+                            ForEach(events) { event in
+                               NavigationLink(
+                                destination: EventDetailsView(event: event), label: {
+                                   EventView(event: event)
+                               })
+                            }
+                        }
+                    }
+                    .offset(
+                        y: [.ongoing, .preparingFinish].contains(pullToRefresh.state) ? Constants.maxOffset : 0
+                    )
+                    .animation(pullToRefresh.state != .finishing ? spring : ease, value: pullToRefresh.state)
+                }
             }
-            
-            ZStack(alignment: .top) {
-                BallView(pullToRefresh: $pullToRefresh)
-                LazyVStack {
-                    ForEach(events) { event in
-                        EventView(event: event)
+            .navigationTitle("SportFan")
+            .toolbar {
+                ToolbarItem {
+                    Button {
+                        withAnimation(
+                            filterShown
+                            ? .easeInOut
+                            : .interpolatingSpring(
+                                stiffness: 20,
+                                damping: 3
+                            ).speed(2.5)
+                        ) {
+                            filterShown.toggle()
+                        }
+                    } label: {
+                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                            .foregroundStyle(Constants.orange)
                     }
                 }
-                .offset(
-                    y: [.ongoing, .preparingFinish].contains(pullToRefresh.state) ? Constants.maxOffset : 0
-                )
-                .animation(pullToRefresh.state != .finishing ? spring : ease, value: pullToRefresh.state)
             }
+            .onChange(of: selectedSports) { _,_ in filter() }
         }
     }
     
     @MainActor
     func update() async {
         events = await fetchMoreEvents(toAppend: events)
+    }
+    
+    func filter() {
+        withAnimation(.interpolatingSpring(stiffness: 30, damping: 8).speed(1.5)) {
+            events = selectedSports.isEmpty ? unfilteredEvents : unfilteredEvents.filter { selectedSports.contains($0.team.sport )}
+        }
     }
 }
 
