@@ -17,6 +17,29 @@ struct EventDetailsView: View {
     @State private var collapsed = false
     @Namespace var namespace
     
+    var collapsedButton: some View {
+        HStack {
+            Spacer()
+            Button(action: { seatingChartVisible = true }) {
+                Image("seats")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal)
+                    .background {
+                        RoundedRectangle(cornerRadius: 36)
+                            .fill(Constants.orange)
+                            .shadow(radius: 2)
+                            .frame(width: Constants.floatingButtonWidth, height: 48)
+                    }
+                    .matchedGeometryEffect(id: "button", in: namespace, properties: .position)
+            }
+            .padding(36)
+        }
+    }
+    
     var body: some View {
         ZStack(alignment: .top) {
             VStack {
@@ -27,6 +50,10 @@ struct EventDetailsView: View {
                     collapsed: collapsed
                 )
                 Spacer()
+                
+                if collapsed {
+                    collapsedButton
+                }
             }
             .zIndex(1)
             
@@ -99,6 +126,19 @@ struct EventDetailsView: View {
                             }
                         }
                         .padding()
+                        
+                        Text("Upcoming Events")
+                          .frame(maxWidth: .infinity, alignment: .leading)
+                          .font(.title3)
+                          .fontWeight(.black)
+                          .foregroundColor(.primary)
+                          .padding()
+                        
+                        VStack {
+                            ForEach(upcomingEvents) { event in
+                                EventView(event: event)
+                            }
+                        }
                     }
                 }
             }
