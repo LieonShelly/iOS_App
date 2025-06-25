@@ -5,8 +5,6 @@
 //  Created by Renjun Li on 2025/6/25.
 //
 
-
-
 import SwiftUI
 
 struct FilterView: View {
@@ -29,7 +27,7 @@ struct FilterView: View {
             if isShown {
                 ForEach(sports, id: \.self) { sport in
                     Button {
-                        
+                        onSelected(sport)
                     } label: {
                         item(for: sport)
                             .padding(.horizontal, 4)
@@ -79,6 +77,14 @@ struct FilterView: View {
                         .strokeBorder(Constants.orange, lineWidth: 3)
                 }
             }
+    }
+    
+    private func onSelected(_ sport: Sport) {
+        if selectedSports.contains(sport) {
+            selectedSports.remove(sport)
+        } else {
+            selectedSports.insert(sport)
+        }
     }
 }
 

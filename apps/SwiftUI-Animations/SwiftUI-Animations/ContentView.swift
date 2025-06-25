@@ -35,6 +35,7 @@ struct ContentView: View {
                                 destination: EventDetailsView(event: event), label: {
                                    EventView(event: event)
                                })
+                               .transition(.scale.combined(with: .opacity))
                             }
                         }
                     }
@@ -70,7 +71,8 @@ struct ContentView: View {
     
     @MainActor
     func update() async {
-        events = await fetchMoreEvents(toAppend: events)
+        unfilteredEvents = await fetchMoreEvents(toAppend: events)
+        filter()
     }
     
     func filter() {

@@ -7,6 +7,23 @@
 
 import SwiftUI
 
+
+func getTicketsInfo(for event: Event) -> [TicketsInfo] {
+    var ticketsLeft = event.ticketsLeft
+    var info: [TicketsInfo] = []
+    
+    (1...4).forEach {
+        let random: Int = .random(in: 15...245)
+        let left = random > ticketsLeft ? ticketsLeft : random
+        ticketsLeft -= left
+        
+        info.append(TicketsInfo(type: "Category \($0)", price: .random(in: 250...350) / $0, left: left))
+    }
+    
+    return info
+}
+
+
 func fetchMoreEvents(toAppend: [Event]) async -> [Event] {
     if !toAppend.isEmpty {
         try? await Task.sleep(nanoseconds: 5_000_000_000)
