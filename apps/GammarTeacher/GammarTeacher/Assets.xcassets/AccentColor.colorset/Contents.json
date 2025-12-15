@@ -1,7 +1,6 @@
 {
-  "images" : [
+  "colors" : [
     {
-      "filename" : "basketball-ball.png",
       "idiom" : "universal"
     }
   ],

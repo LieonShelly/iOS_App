@@ -1,13 +1,13 @@
 //
-//  SwiftUI_AnimationsUITestsLaunchTests.swift
-//  SwiftUI-AnimationsUITests
+//  GammarTeacherUITestsLaunchTests.swift
+//  GammarTeacherUITests
 //
-//  Created by Renjun Li on 2025/6/24.
+//  Created by Renjun Li on 2025/12/15.
 //
 
 import XCTest
 
-final class SwiftUI_AnimationsUITestsLaunchTests: XCTestCase {
+final class GammarTeacherUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

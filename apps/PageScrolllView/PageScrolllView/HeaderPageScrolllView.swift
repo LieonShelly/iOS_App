@@ -138,7 +138,7 @@ struct HeaderPageScrolllView<Header: View, Pages: View>: View {
                         if activeTab == label.title {
                             customTabbar()
                                 .visualEffect({ content, proxy in
-                                    content.offset(x: -proxy.frame(in:   .scrollView(axis: .horizontal)).minX )
+                                    content.offset(x: -proxy.frame(in: .scrollView(axis: .horizontal)).minX )
                                 })
                                 .transition(.identity)
                         } else {
@@ -209,7 +209,6 @@ struct HeaderPageScrolllView<Header: View, Pages: View>: View {
                     content.offset(x: proxy.size.width * progress)
                 }
         }
-       
         .frame(height: 40)
         .background(.background)
     }

@@ -1,13 +1,13 @@
 //
-//  SwiftUI_AnimationsUITests.swift
-//  SwiftUI-AnimationsUITests
+//  GammarTeacherUITests.swift
+//  GammarTeacherUITests
 //
-//  Created by Renjun Li on 2025/6/24.
+//  Created by Renjun Li on 2025/12/15.
 //
 
 import XCTest
 
-final class SwiftUI_AnimationsUITests: XCTestCase {
+final class GammarTeacherUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
