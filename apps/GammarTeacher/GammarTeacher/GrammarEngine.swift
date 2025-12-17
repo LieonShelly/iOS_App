@@ -4,6 +4,7 @@
 //
 //  Created by Renjun Li on 2025/12/15.
 //
+
 import Foundation
 import MLX
 import MLXLLM       // ✅ 对应你截图里的库名
@@ -49,7 +50,7 @@ actor GrammarEngine {
                 
                 // 2. 准备生成参数
                 // GenerateParameters 位于 MLXLMCommon 中
-                let parameters = GenerateParameters(maxTokens: 512, temperature: 0.2)
+                let parameters = GenerateParameters(maxTokens: 100, temperature: 0.2)
                 
                 // 3. 开始推理
                 do {
@@ -58,19 +59,45 @@ actor GrammarEngine {
                         
                         // 3.1 处理输入
                         let input = try await context.processor.prepare(input: .init(prompt: prompt))
-                        
+                        // 🟢 1. 定义一个变量来记录上一次解码出的完整文本
+                        var lastDecodedText = ""
                         // 3.2 调用生成函数 (MLXLMCommon.generate)
                         return try MLXLMCommon.generate(
                             input: input,
                             parameters: parameters,
                             context: context
                         ) { tokens in
+                            // 🛑 检查取消
+                            if Task.isCancelled { return .stop }
                             
-                            // 3.3 解码 Token 为文本
-                            let text = context.tokenizer.decode(tokens: tokens)
-                            continuation.yield(text)
+                            // 🟢 2. 解码当前所有的 token (包含之前的和最新的)
+                            let currentText = context.tokenizer.decode(tokens: tokens)
                             
-                            // 返回 .more 继续生成，返回 .stop 停止
+                            // 🟢 3. 计算增量：只取新增加的部分
+                            // 比如：上次是 "Apple"，这次是 "Apple pie"
+                            // 我们只想要 " pie"
+                            let newText: String
+                            if currentText.count > lastDecodedText.count {
+                                // 截取掉前面已经发送过的部分
+                                let index = currentText.index(currentText.startIndex, offsetBy: lastDecodedText.count)
+                                newText = String(currentText[index...])
+                            } else {
+                                newText = ""
+                            }
+                            
+                            // 🟢 4. 更新记录
+                            lastDecodedText = currentText
+                            
+                            // 🛑 5. 过滤掉结束符 (可选，看你是否想让用户看到 eot_id)
+                            if newText.contains("<|eot_id|>") || newText.contains("<|end_of_text|>") {
+                                return .stop
+                            }
+                            
+                            // 🟢 6. 只发送新增加的文本
+                            if !newText.isEmpty {
+                                continuation.yield(newText)
+                            }
+                            
                             return .more
                         }
                     }
