@@ -11,9 +11,7 @@ struct PracticeView: View {
     @State private var viewModel = QuizViewModel()
     @Environment(\.modelContext) private var modelContext // 获取环境中的 context
     @Environment(\.dismiss) private var dismiss // 退出按钮
-    
-    // 这里的 wordsToPractice 其实没用了，因为 ViewModel 会自己去查数据库
-    // 但为了兼容入口，保留参数，但不使用它
+    @AppStorage("modelPath") var storedModelPath: String = ""
     var wordsToPractice: [WordItem]
     
     @FocusState private var isInputFocused: Bool
@@ -24,10 +22,31 @@ struct PracticeView: View {
             if let word = viewModel.currentWord {
                 // --- 题目区域 ---
                 VStack(spacing: 10) {
-                    Text(word.chineseDefinition)
-                        .font(.title2)
-                        .multilineTextAlignment(.center)
-                        .padding()
+                    if !viewModel.aiOutputText.isEmpty {
+                        Text(viewModel.aiOutputText)
+                            .font(.title3) // 英文解释稍微小一点
+                            .multilineTextAlignment(.leading) // 英文左对齐阅读更舒服
+                            
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .overlay(alignment: .topTrailing) {
+                                // 如果正在生成，显示一个小菊花
+                                if viewModel.isGeneratingAI {
+                                    ProgressView()
+                                        .scaleEffect(0.5)
+                                        .padding(5)
+                                }
+                            }
+                    } else {
+                        Text(word.chineseDefinition)
+                            .font(.title2)
+                            .multilineTextAlignment(.center)
+                            .padding()
+                    }
+                    
+                  
                     
                     // 状态显示逻辑
                     if viewModel.currentState == .punishment || viewModel.currentState == .grading {
@@ -121,9 +140,16 @@ struct PracticeView: View {
         }
         .padding()
         .onAppear {
-            // 自动开始
-            viewModel.startSession(context: modelContext)
-            isInputFocused = true
+            if !storedModelPath.isEmpty {
+                Task {
+                    await viewModel.loadModel(path: storedModelPath)
+                    viewModel.startSession(context: modelContext)
+                    isInputFocused = true
+                }
+            } else {
+                viewModel.startSession(context: modelContext)
+                isInputFocused = true
+            }
         }
     }
     

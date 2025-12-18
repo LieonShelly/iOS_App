@@ -17,7 +17,9 @@ struct ContentView: View {
     @State private var isImporting = false
     @State private var importResult: String = ""
     @State private var showingAlert = false
-
+    @State private var isSelectingModel = false
+    @State private var modelPath: String? = UserDefaults.standard.string(forKey: "modelPath")
+    
     var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading) {
@@ -60,6 +62,12 @@ struct ContentView: View {
                         Label("Start Session", systemImage: "play.fill")
                     }
                 }
+                
+                ToolbarItem(placement: .automatic) {
+                    Button(action: { isSelectingModel = true }) {
+                        Label("Select Model", systemImage: "cpu")
+                    }
+                }
             }
         } detail: {
             Text("Select a word to preview detail")
@@ -90,6 +98,27 @@ struct ContentView: View {
                 showingAlert = true
             }
         }
+        .fileImporter(
+            isPresented: $isSelectingModel,
+            allowedContentTypes: [.folder], // 选择文件夹
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                // 获取权限
+                guard url.startAccessingSecurityScopedResource() else { return }
+                // 注意：实际开发中需要处理 Security Scoped Bookmark 以便下次自动加载
+                // 这里简化处理，直接存路径字符串（重启可能失效，需手动重选，MVP足够）
+                let path = url.path(percentEncoded: false)
+                modelPath = path
+                UserDefaults.standard.set(path, forKey: "modelPath")
+                url.stopAccessingSecurityScopedResource()
+            case .failure(let error):
+                print(error)
+            }
+        }
+        
         .alert("Import Status", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
         } message: {
