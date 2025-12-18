@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct ContentView: View {
+struct GrammarContentView: View {
     @State private var inputText = "I has a apple and he go too school yesterday."
     @State private var outputText = ""
     @State private var isLoading = false
