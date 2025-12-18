@@ -7,23 +7,16 @@
 import SwiftUI
 
 struct ContentView: View {
-    // ⚠️ 必填：请把这里替换为你终端里下载模型的那个文件夹路径
-    // 例如: "/Users/yourname/Documents/AI-Projects/Llama-3.2-3B-Instruct-4bit"
-    // 你可以在 Finder 里找到那个文件夹，按住 Option 键右键 -> "Copy as Pathname"
-    let MODEL_PATH = "/Users/renjunli/Downloads/Llama-3.2-3B-Instruct-4bit"
-    
-    @State private var inputText = "I has a apple and he go too school yesterday." // 这是一个故意写错的测试句
+    @State private var inputText = "I has a apple and he go too school yesterday."
     @State private var outputText = ""
     @State private var isLoading = false
     @State private var isModelLoaded = false
     @State private var statusMessage = "Waiting to load model..."
     
-    // 初始化引擎
-    let engine = GrammarEngine()
+   var engine = GrammarEngine()
     
     var body: some View {
         HStack(spacing: 0) {
-            // 左边：输入区
             VStack(alignment: .leading) {
                 Text("Original Text")
                     .font(.headline)
@@ -38,7 +31,6 @@ struct ContentView: View {
             
             Divider()
             
-            // 右边：AI 修正区
             VStack(alignment: .leading) {
                 Text("AI Correction")
                     .font(.headline)
@@ -46,17 +38,16 @@ struct ContentView: View {
                     .foregroundStyle(.blue)
                 
                 ScrollView {
-                    Text(LocalizedStringKey(outputText)) // 👈 关键：用 LocalizedStringKey 触发 Markdown 解析
+                    Text(LocalizedStringKey(outputText))
                         .font(.body)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
-                        .animation(.default, value: outputText) // 添加一点流畅的动画
+                        .animation(.default, value: outputText)
                 }
                 .background(Color.blue.opacity(0.05))
                 .cornerRadius(8)
                 
-                // 底部状态栏与按钮
                 HStack {
                     Text(statusMessage)
                         .font(.caption)
@@ -81,8 +72,7 @@ struct ContentView: View {
         }
         .frame(minWidth: 800, minHeight: 500)
         .task {
-            // App 启动时自动加载模型
-            await loadAI()
+            loadAI()
         }
     }
     
@@ -90,12 +80,12 @@ struct ContentView: View {
         Task {
             statusMessage = "Loading 3B Model into Memory..."
             do {
-                try await engine.loadModel(from: MODEL_PATH)
+                let modelPath = "/Users/renjunli/Downloads/Llama-3.2-3B-Instruct-4bit"
+                try await engine.loadModel(from: modelPath)
                 isModelLoaded = true
                 statusMessage = "Model Ready (Quantized 4-bit)"
             } catch {
                 statusMessage = "Error loading model: \(error.localizedDescription)"
-                print(error)
             }
         }
     }
@@ -104,11 +94,10 @@ struct ContentView: View {
         guard isModelLoaded else { return }
         
         isLoading = true
-        outputText = "" // 清空上一次结果
+        outputText = ""
         statusMessage = "Generating..."
         
         Task {
-            // 这是一个异步流，字会一个一个蹦出来
             for await token in await engine.fixGrammar(for: inputText) {
                 outputText += token
             }

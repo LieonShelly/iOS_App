@@ -7,36 +7,24 @@
 
 import Foundation
 import MLX
-import MLXLLM       // ✅ 对应你截图里的库名
-import MLXLMCommon  // ✅ 必须引入，核心逻辑在这里
+import MLXLLM
+import MLXLMCommon
 import Tokenizers
 
 actor GrammarEngine {
     
-    // 新版 API 使用 ModelContainer 来持有模型
     private var modelContainer: ModelContainer?
     
     var isReady: Bool { modelContainer != nil }
     
-    /// 加载本地模型
     func loadModel(from localPath: String) async throws {
         let modelDirectory = URL(fileURLWithPath: localPath)
-        
-        // 1. 创建配置
-        // 指向你下载的模型文件夹
         let configuration = ModelConfiguration(directory: modelDirectory)
-        
-        // 2. 加载模型 (使用 Factory)
-        // ⚠️ 关键修正：新版本必须用 LLMModelFactory.shared.loadContainer
         let container = try await LLMModelFactory.shared.loadContainer(configuration: configuration) { progress in
-            // 这里可以打印加载进度，比如: print("Loading: \(progress.fractionCompleted)")
         }
-        
         self.modelContainer = container
-        print("✅ Model loaded successfully from \(localPath)")
     }
     
-    /// 核心功能：流式生成纠错建议
     func fixGrammar(for text: String) -> AsyncStream<String> {
         return AsyncStream { continuation in
             Task {
@@ -45,55 +33,32 @@ actor GrammarEngine {
                     return
                 }
                 
-                // 1. 构建 Prompt
                 let prompt = buildLlama3Prompt(userText: text)
-                
-                // 2. 准备生成参数
-                // GenerateParameters 位于 MLXLMCommon 中
                 let parameters = GenerateParameters(maxTokens: 100, temperature: 0.2)
-                
-                // 3. 开始推理
                 do {
-                    // ⚠️ 关键修正：新版本使用 container.perform 来确保线程安全
                     let _ = try await container.perform { context in
-                        
-                        // 3.1 处理输入
                         let input = try await context.processor.prepare(input: .init(prompt: prompt))
-                        // 🟢 1. 定义一个变量来记录上一次解码出的完整文本
                         var lastDecodedText = ""
-                        // 3.2 调用生成函数 (MLXLMCommon.generate)
                         return try MLXLMCommon.generate(
                             input: input,
                             parameters: parameters,
                             context: context
                         ) { tokens in
-                            // 🛑 检查取消
                             if Task.isCancelled { return .stop }
-                            
-                            // 🟢 2. 解码当前所有的 token (包含之前的和最新的)
                             let currentText = context.tokenizer.decode(tokens: tokens)
                             
-                            // 🟢 3. 计算增量：只取新增加的部分
-                            // 比如：上次是 "Apple"，这次是 "Apple pie"
-                            // 我们只想要 " pie"
                             let newText: String
                             if currentText.count > lastDecodedText.count {
-                                // 截取掉前面已经发送过的部分
                                 let index = currentText.index(currentText.startIndex, offsetBy: lastDecodedText.count)
                                 newText = String(currentText[index...])
                             } else {
                                 newText = ""
                             }
-                            
-                            // 🟢 4. 更新记录
                             lastDecodedText = currentText
-                            
-                            // 🛑 5. 过滤掉结束符 (可选，看你是否想让用户看到 eot_id)
                             if newText.contains("<|eot_id|>") || newText.contains("<|end_of_text|>") {
                                 return .stop
                             }
                             
-                            // 🟢 6. 只发送新增加的文本
                             if !newText.isEmpty {
                                 continuation.yield(newText)
                             }
@@ -113,7 +78,6 @@ actor GrammarEngine {
     }
     
     private func buildLlama3Prompt(userText: String) -> String {
-        // 升级版 System Prompt
         let systemMessage = """
             You are an expert English teacher. 
             First, provide the corrected version of the user's text in **Bold**.
