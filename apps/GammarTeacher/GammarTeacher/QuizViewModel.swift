@@ -5,44 +5,135 @@
 //  Created by Renjun Li on 2025/12/18.
 //
 
-
 import SwiftUI
 import SwiftData
 
-@Observable // Swift 5.9+ 新宏，如果是老版本SwiftUI用 ObservableObject
+@Observable
 class QuizViewModel {
-    // 状态定义
     enum SessionState {
-        case idle           // 闲置/结束
-        case questioning    // 正在提问
-        case success        // 答对了
-        case punishment     // 罚写模式
+        case idle           // 闲置
+        case questioning    // 提问中
+        case punishment     // 错误罚写中
+        case grading        // 答对后，等待评分中 (新增状态)
     }
     
     // 数据源
     private var reviewQueue: [WordItem] = []
+    var context: ModelContext? // 需要注入 Context 以保存数据
     
-    // 当前状态
+    // 状态
     var currentState: SessionState = .idle
     var currentWord: WordItem?
     var userInput: String = ""
     var punishmentCount: Int = 0
-    let requiredRepetitions = 3 // 设为3遍
+    let requiredRepetitions = 3
     
-    // 界面反馈文案
     var feedbackMessage: String = ""
     
-    /// 开始一个新的复习会话
-    func startSession(words: [WordItem]) {
-        self.reviewQueue = words.shuffled() // 暂时随机乱序
+    // MARK: - API
+    
+    /// 开始复习：只获取 nextReviewDate <= now 的单词
+    func startSession(context: ModelContext) {
+        self.context = context
+        
+        // 1. 获取所有单词
+        // (注：SwiftData 的复杂查询建议在 View 层做，这里简化为获取所有再 Filter，
+        // 实际生产中应该用 Predicate 优化性能)
+        do {
+            let descriptor = FetchDescriptor<WordItem>(
+                sortBy: [SortDescriptor(\.nextReviewDate)]
+            )
+            let allWords = try context.fetch(descriptor)
+            
+            // 2. 筛选：复习时间到了的，或者全新的
+            self.reviewQueue = allWords.filter { $0.nextReviewDate <= Date.now }
+            
+            print("Session started. Due words: \(reviewQueue.count)")
+            nextWord()
+        } catch {
+            print("Fetch failed: \(error)")
+        }
+    }
+    
+    /// 提交拼写
+    func submitAnswer() {
+        guard let word = currentWord else { return }
+        let input = userInput.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let target = word.spelling.lowercased()
+        
+        switch currentState {
+        case .questioning:
+            if input == target {
+                // ✅ 拼写正确 -> 进入评分阶段
+                SoundManager.shared.playSuccess()
+                currentState = .grading
+                feedbackMessage = "Correct! Rate difficulty:"
+                // 注意：这里不再自动跳转，而是等用户按 1/2/3/4
+            } else {
+                // ❌ 拼写错误 -> 罚写模式
+                SoundManager.shared.playError()
+                enterPunishmentMode()
+            }
+            
+        case .punishment:
+            if input == target {
+                SoundManager.shared.playSuccess()
+                punishmentCount += 1
+                userInput = ""
+                
+                if punishmentCount >= requiredRepetitions {
+                    // 罚写完成 -> 强制标记为 Again (忘记)
+                    applyGrading(.again)
+                }
+            } else {
+                SoundManager.shared.playError()
+            }
+            
+        default: break
+        }
+    }
+    
+    /// 用户打分 (或者罚写结束自动调用)
+    func applyGrading(_ grade: SRSLogic.Grade) {
+        guard let word = currentWord, let ctx = context else { return }
+        
+        // 1. 计算 SRS 结果
+        let result = SRSLogic.calculate(
+            grade: grade,
+            currentInterval: word.interval,
+            currentEaseFactor: word.easeFactor,
+            currentRepetition: word.repetitionCount
+        )
+        
+        // 2. 更新数据库模型
+        word.interval = result.interval
+        word.easeFactor = result.easeFactor
+        word.repetitionCount = result.repetition
+        
+        // 计算下次复习的绝对时间 (秒 = 天 * 86400)
+        // 如果是 Again(0天)，则设为 5分钟后 或 明天，这里简化为“现在”以便立即重试，或者加 1 分钟
+        if result.interval == 0 {
+             // 逻辑选择：如果是 Again，是否要在本次 Session 再次出现？
+             // 简化版：设为 1分钟后，这样下次启动 Session 会出现；或者直接归档。
+             // 这里设为 Now，意味着它还没“掌握”。
+             word.nextReviewDate = Date.now
+        } else {
+             word.nextReviewDate = Date.now.addingTimeInterval(result.interval * 86400)
+        }
+        
+        word.lastReviewDate = Date.now
+        
+        // 3. 保存
+        try? ctx.save()
+        
+        // 4. 下一题
         nextWord()
     }
     
-    /// 切换到下一个词
     private func nextWord() {
         guard !reviewQueue.isEmpty else {
             currentState = .idle
-            feedbackMessage = "Session Complete!"
+            feedbackMessage = "All due words reviewed!"
             currentWord = nil
             return
         }
@@ -54,60 +145,10 @@ class QuizViewModel {
         punishmentCount = 0
     }
     
-    /// 提交答案（核心逻辑）
-    func submitAnswer() {
-        guard let word = currentWord else { return }
-        
-        let input = userInput.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let target = word.spelling.lowercased()
-        
-        switch currentState {
-        case .questioning:
-            if input == target {
-                // ✅ 答对了
-                SoundManager.shared.playSuccess()
-                currentState = .success
-                feedbackMessage = "Correct! ✅"
-                
-                // 延迟 0.8秒 自动跳下一个，给用户一种流畅感
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    self.nextWord()
-                }
-            } else {
-                // ❌ 答错了 -> 进入罚写模式
-                SoundManager.shared.playError()
-                enterPunishmentMode()
-            }
-            
-        case .punishment:
-            if input == target {
-                // 罚写正确
-                SoundManager.shared.playSuccess()
-                punishmentCount += 1
-                userInput = "" // 清空输入框让用户继续打
-                
-                if punishmentCount >= requiredRepetitions {
-                    // 罚写完成，放行
-                    feedbackMessage = "Recovered! Moving on..."
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self.nextWord()
-                    }
-                }
-            } else {
-                // 罚写又错了？(这里可以设计得更变态，比如重置计数，暂时先只报错)
-                SoundManager.shared.playError()
-                // 震动反馈或视觉提示
-            }
-            
-        default:
-            break
-        }
-    }
-    
     private func enterPunishmentMode() {
         currentState = .punishment
         userInput = ""
         punishmentCount = 0
-        // 在罚写模式下，我们直接显示正确答案给用户照抄
+        feedbackMessage = "Incorrect. Punishment Mode."
     }
 }
