@@ -48,6 +48,21 @@ struct PracticeView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
+                .onTapGesture {
+                    SoundManager.shared.speak(word.spelling)
+                }
+                .overlay(alignment: .topTrailing) {
+                    Button(action: {
+                        SoundManager.shared.speak(word.spelling)
+                    }) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                            .padding()
+                    }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut("s", modifiers: .command)
+                }
                 
                 if viewModel.currentState == .grading {
                     VStack(spacing: 15) {
@@ -79,6 +94,11 @@ struct PracticeView: View {
                         .focused($isInputFocused)
                         .onSubmit {
                             viewModel.submitAnswer()
+                        }
+                        .onChange(of: viewModel.userInput) { oldValue, newValue in
+                            if oldValue != newValue {
+                                SoundManager.shared.playKeyClick()
+                            }
                         }
                 }
                 

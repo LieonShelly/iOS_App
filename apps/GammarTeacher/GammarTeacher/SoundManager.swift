@@ -7,19 +7,48 @@
 
 
 import AppKit
+import AVFoundation
 
-class SoundManager {
+class SoundManager: NSObject, AVSpeechSynthesizerDelegate {
     static let shared = SoundManager()
     
+    private let clickSound: NSSound?
+    private var synthesizer = AVSpeechSynthesizer()
+    
+    private override init() {
+        self.clickSound = NSSound(named: "click")
+        super.init()
+        synthesizer.delegate = self
+    }
+    
     func playSuccess() {
-        NSSound(named: "Glass")?.play() // 清脆的成功音
+        NSSound(named: "Glass")?.play()
     }
     
     func playError() {
-        NSSound(named: "Basso")?.play() // 低沉的错误音
+        NSSound(named: "Basso")?.play()
     }
     
-    func playTyping() {
-        // 可选：给罚写增加一点机械键盘的打字音效，暂时留空
+    func playKeyClick() {
+        if let sound = clickSound {
+            if sound.isPlaying { sound.stop() }
+            sound.play()
+        } else {
+            NSSound(named: "Tink")?.play()
+        }
+    }
+    
+    func speak(_ text: String, rate: Float = 0.5) {
+        if synthesizer.isSpeaking {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+        
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        
+        utterance.rate = rate
+        utterance.volume = 1.0
+        
+        synthesizer.speak(utterance)
     }
 }
