@@ -13,40 +13,26 @@ struct PracticeView: View {
     @Environment(\.dismiss) private var dismiss // 退出按钮
     @AppStorage("modelPath") var storedModelPath: String = ""
     var wordsToPractice: [WordItem]
-    
     @FocusState private var isInputFocused: Bool
     
     var body: some View {
         VStack(spacing: 30) {
-            
             if let word = viewModel.currentWord {
-                // --- 题目区域 ---
                 VStack(spacing: 10) {
                     if !viewModel.aiOutputText.isEmpty {
                         Text(viewModel.aiOutputText)
-                            .font(.title3) // 英文解释稍微小一点
-                            .multilineTextAlignment(.leading) // 英文左对齐阅读更舒服
-                            
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                            .font(.title)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .padding()
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(8)
-                            .overlay(alignment: .topTrailing) {
-                                // 如果正在生成，显示一个小菊花
-                                if viewModel.isGeneratingAI {
-                                    ProgressView()
-                                        .scaleEffect(0.5)
-                                        .padding(5)
-                                }
-                            }
-                    } else {
-                        Text(word.chineseDefinition)
-                            .font(.title2)
-                            .multilineTextAlignment(.center)
-                            .padding()
                     }
                     
-                  
+                    
+                    Text(word.chineseDefinition)
+                        .font(.title)
+                        .padding()
                     
                     // 状态显示逻辑
                     if viewModel.currentState == .punishment || viewModel.currentState == .grading {
@@ -62,12 +48,8 @@ struct PracticeView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .frame(height: 150)
-                
-                // --- 交互区域 ---
                 
                 if viewModel.currentState == .grading {
-                    // === 评分按钮区域 (新增) ===
                     VStack(spacing: 15) {
                         Text("How was it?")
                             .font(.headline)
@@ -80,16 +62,9 @@ struct PracticeView: View {
                         }
                     }
                     .padding()
-                    // 支持键盘快捷键 1,2,3,4
-                    .background {
-                        Button("") { viewModel.applyGrading(.again) }.keyboardShortcut("1", modifiers: [])
-                        Button("") { viewModel.applyGrading(.hard) }.keyboardShortcut("2", modifiers: [])
-                        Button("") { viewModel.applyGrading(.good) }.keyboardShortcut("3", modifiers: [])
-                        Button("") { viewModel.applyGrading(.easy) }.keyboardShortcut("4", modifiers: [])
-                    }
                     
                 } else {
-                    // === 输入框区域 ===
+
                     TextField("", text: $viewModel.userInput)
                         .font(.system(size: 32, design: .monospaced))
                         .multilineTextAlignment(.center)
@@ -111,7 +86,6 @@ struct PracticeView: View {
                     .foregroundStyle(.secondary)
                 
             } else {
-                // --- 初始/结束状态 ---
                 VStack(spacing: 20) {
                     if viewModel.feedbackMessage == "All due words reviewed!" {
                         Text("🎉 All Done for Now!")
