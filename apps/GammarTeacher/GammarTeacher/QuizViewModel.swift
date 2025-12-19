@@ -191,39 +191,89 @@ class QuizViewModel {
     private func startAIGeneration(for wordItem: WordItem) {
         generationTask = Task {
             isGeneratingAI = true
-            aiOutputText = "AI is thinking..."
             
-            // 检查模型是否加载
+            await MainActor.run {
+                aiOutputText = "🤖 AI analyzing..."
+            }
+            
             let ready = await engine.isReady
             guard ready else {
                 await MainActor.run {
-                    aiOutputText = "Model not loaded. Showing Chinese: \(wordItem.chineseDefinition)"
+                    aiOutputText = "" // 失败则清空，显示原本的中文
                     isGeneratingAI = false
                 }
                 return
             }
             
-            var fullText = ""
-            // 开始流式接收
-            await MainActor.run { aiOutputText = "" }
-            
+            var fullJSONString = ""
+        
             for await segment in await engine.explainWord(wordItem.spelling) {
                 if Task.isCancelled { return }
-                
-                await MainActor.run {
-                    fullText += segment
-                    self.aiOutputText = fullText
-                }
+                fullJSONString += segment
             }
             
-            // 生成完毕，保存到数据库缓存
-            if !Task.isCancelled && !fullText.isEmpty {
+
+            
+            if !Task.isCancelled && !fullJSONString.isEmpty {
                 await MainActor.run {
-                    wordItem.aiExplanation = fullText
-                    try? context?.save() // 持久化缓存
+                    let cleanJSON = cleanJSONString(fullJSONString)
+                    print(cleanJSON)
+                    if let data = cleanJSON.data(using: .utf8),
+                       let result = try? JSONDecoder().decode(AIWordResponse.self, from: data) {
+                        
+                        wordItem.aiExplanation = result.definition
+                        wordItem.aiExampleSentence = result.example
+                        wordItem.aiSynonym = result.synonym
+                        self.aiOutputText = result.definition
+                        
+                        try? context?.save()
+                        print("✅ AI Data Saved for \(wordItem.spelling)")
+                        
+                    } else {
+                        print("JSON Decode Failed. Raw output: \(fullJSONString)")
+                        self.aiOutputText = "Could not generate structured data."
+                    }
+                    
                     isGeneratingAI = false
                 }
             }
         }
+    }
+    
+    private func cleanJSONString(_ input: String) -> String {
+        var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 1. 去掉 Markdown 代码块标记 (```json 和 ```)
+        if text.hasPrefix("```json") {
+            text = String(text.dropFirst(7))
+        } else if text.hasPrefix("```") {
+            text = String(text.dropFirst(3))
+        }
+        
+        if text.hasSuffix("```") {
+            text = String(text.dropLast(3))
+        }
+        
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty && text.last != "}" {
+            print("⚠️ JSON format warning: Missing closing brace. Attempting to fix.")
+            text += "}"
+        }
+        
+        return text
+    }
+}
+
+struct AIWordResponse: Codable {
+    let definition: String // 英文解释
+    let example: String    // 例句
+    let synonym: String    // 同义词
+}
+
+extension String {
+    var unescaped: String {
+        let mutable = NSMutableString(string: self)
+        CFStringTransform(mutable, nil, "Any-Hex/Java" as NSString, true)
+        return mutable as String
     }
 }

@@ -19,13 +19,12 @@ final class WordItem {
     
     // MARK: - Imported Data (Basic Info)
     var chineseDefinition: String // 对应 JSON 中的 trans
-    var phonetic: String? // 优先存 usphone，没有则存 ukphone
     
     // MARK: - AI Context (For Step 4)
     // 这些字段初始为空，等待 AI 填充
     var aiExplanation: String? // AI 生成的简单英文释义
     var aiExampleSentence: String? // AI 生成的例句
-    
+    var aiSynonym: String?
     // MARK: - SRS Algorithm Data (For Step 3)
     // 默认值配置为“新单词”状态
     var nextReviewDate: Date = Date.now // 默认当前立即可背
@@ -36,11 +35,10 @@ final class WordItem {
     var isMastered: Bool = false // 是否已完全掌握
     
     // MARK: - Init
-    init(spelling: String, chineseDefinition: String, originalId: String? = nil, phonetic: String? = nil, createdTime: Date = .now) {
+    init(spelling: String, chineseDefinition: String, originalId: String? = nil, createdTime: Date = .now) {
         self.spelling = spelling
         self.chineseDefinition = chineseDefinition
         self.originalId = originalId
-        self.phonetic = phonetic
         self.createdTime = createdTime
     }
 }

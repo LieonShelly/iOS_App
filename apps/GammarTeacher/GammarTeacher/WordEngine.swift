@@ -38,7 +38,7 @@ actor WordEngine {
                 let prompt = buildVocabPrompt(word: word)
                 
                 //稍微增加一点 token 上限，防止解释被截断
-                let parameters = GenerateParameters(maxTokens: 256, temperature: 0.6)
+                let parameters = GenerateParameters(maxTokens: 512, temperature: 0.6)
                 
                 do {
                     let _ = try await container.perform { context in
@@ -81,26 +81,35 @@ actor WordEngine {
         }
     }
     
-    /// 构建背单词专用的 Prompt
     private func buildVocabPrompt(word: String) -> String {
+        // 1. 修改模板：移除了 phonetic 字段
+        let jsonTemplate = """
+            {
+                "definition": "...",
+                "example": "...",
+                "synonym": "..."
+            }
+            """
+        
+        // 2. 修改指令：移除了关于音标编码的规则，保留了核心规则
         let systemMessage = """
-                You are a helpful English vocabulary tutor.
-                Please explain the word provided by the user in simple English suitable for a learner.
-                
-                Strict Rules:
-                1. Provide a simple definition.
-                2. Provide one synonym.
-                3. Provide one example sentence.
-                4. **CRITICAL: DO NOT mention the word "\(word)" itself in your explanation.** Use "It" or "The word" instead.
-                5. Keep it concise (under 50 words).
-                """
+            You are a strict data extraction assistant. 
+            Output JSON only.
+            
+            Rules:
+            1. Output valid JSON exactly matching the template below.
+            2. Keep the "definition" and "example" in simple, readable English.
+            3. **CRITICAL**: Do not mention the word "\(word)" itself in the "definition" field. Use "It" or "The word" instead.
+            4. Format:
+            \(jsonTemplate)
+            """
         
         return """
-                <|begin_of_text|><|start_header_id|>system<|end_header_id|>
-                
-                \(systemMessage)<|eot_id|><|start_header_id|>user<|end_header_id|>
-                
-                \(word)<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-                """
+            <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+            
+            \(systemMessage)<|eot_id|><|start_header_id|>user<|end_header_id|>
+            
+            \(word)<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+            """
     }
 }

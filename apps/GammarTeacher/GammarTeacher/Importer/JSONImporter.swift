@@ -72,8 +72,7 @@ class JSONImporter {
             let newWord = WordItem(
                 spelling: spelling,
                 chineseDefinition: item.trans,
-                originalId: item.itemId,
-                phonetic: item.usphone ?? item.ukphone // 优先美音
+                originalId: item.itemId
             )
             
             modelContext.insert(newWord)
