@@ -25,7 +25,6 @@ actor WordEngine {
         self.modelContainer = container
     }
     
-    /// 生成单词解释 (流式输出)
     func explainWord(_ word: String) -> AsyncStream<String> {
         return AsyncStream { continuation in
             Task {
@@ -33,11 +32,9 @@ actor WordEngine {
                     continuation.finish()
                     return
                 }
-                
-                // 使用专门的 Prompt
+
                 let prompt = buildVocabPrompt(word: word)
                 
-                //稍微增加一点 token 上限，防止解释被截断
                 let parameters = GenerateParameters(maxTokens: 512, temperature: 0.6)
                 
                 do {
@@ -53,7 +50,6 @@ actor WordEngine {
                             if Task.isCancelled { return .stop }
                             let currentText = context.tokenizer.decode(tokens: tokens)
                             
-                            // 增量计算 logic (和你之前的代码一样)
                             let newText: String
                             if currentText.count > lastDecodedText.count {
                                 let index = currentText.index(currentText.startIndex, offsetBy: lastDecodedText.count)
@@ -82,7 +78,6 @@ actor WordEngine {
     }
     
     private func buildVocabPrompt(word: String) -> String {
-        // 1. 修改模板：移除了 phonetic 字段
         let jsonTemplate = """
             {
                 "definition": "...",
@@ -112,4 +107,10 @@ actor WordEngine {
             \(word)<|eot_id|><|start_header_id|>assistant<|end_header_id|>
             """
     }
+}
+
+struct AIWordResponse: Codable {
+    let definition: String
+    let example: String
+    let synonym: String
 }

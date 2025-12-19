@@ -13,8 +13,6 @@ struct PracticeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @AppStorage("modelPath") var storedModelPath: String = ""
-    
-    // 兼容旧接口
     var wordsToPractice: [WordItem]
     
     @FocusState private var isInputFocused: Bool
@@ -32,11 +30,9 @@ struct PracticeView: View {
     }
     
     var topBar: some View {
-        
-        // Layer 3: 顶部工具栏 (悬浮在最上层，钉在顶部)
         VStack {
             HStack {
-                Spacer() // 把按钮推到右边
+                Spacer()
                 if viewModel.currentState != .idle {
                     Button(action: {
                         SoundManager.shared.speak(viewModel.currentWord?.spelling ?? "")
@@ -53,15 +49,12 @@ struct PracticeView: View {
             .padding(.horizontal, 40)
             .padding(.top, 20)
             
-            Spacer() // 这个 Spacer 很关键，它把上面的 HStack 顶到了最上方
+            Spacer()
         }
     }
     
     func wordInfoView(_ word: WordItem) -> some View {
-        // 1. 问题提示区 (AI 解释 / 音标 / 例句)
         VStack(spacing: 16) {
-            
-            // B. 核心解释
             if let explanation = word.aiExplanation, !explanation.isEmpty {
                 Text(explanation)
                     .font(.system(size: 28, weight: .medium, design: .serif))
@@ -78,7 +71,6 @@ struct PracticeView: View {
                 }
             }
             
-            // 降级显示中文
             Text(word.chineseDefinition)
                 .font(.system(size: 32, weight: .bold))
                 .multilineTextAlignment(.center)
@@ -100,23 +92,17 @@ struct PracticeView: View {
     }
     
     func inputView(_ word: WordItem) -> some View {
-        // 2. 输入交互区
         VStack(spacing: 20) {
-            
-            // 答案提示 (仅在罚写或评分时显示)
             if viewModel.currentState == .punishment || viewModel.currentState == .grading {
                 Text(word.spelling)
-                    .font(.system(size: 48, weight: .bold, design: .monospaced))
+                    .font(.system(size: 48, weight: .bold, design: .serif))
                     .foregroundStyle(viewModel.currentState == .punishment ? .red : .green)
                     .tracking(3)
                     .transition(.opacity.combined(with: .scale))
             } else {
-                // 占位，防止界面高度跳动
                 Text(" ")
                     .font(.system(size: 48))
             }
-            
-            // 评分按钮组 (Grading Mode)
             if viewModel.currentState == .grading {
                 HStack(spacing: 16) {
                     SRSButton(title: "Again", shortcut: "1", color: .red) { viewModel.applyGrading(.again) }
@@ -130,7 +116,7 @@ struct PracticeView: View {
                 // 输入框 (Typing Mode)
                 ZStack(alignment: .bottom) {
                     TextField("", text: $viewModel.userInput)
-                        .font(.system(size: 60, weight: .bold, design: .monospaced))
+                        .font(.system(size: 60, weight: .bold, design: .serif))
                         .multilineTextAlignment(.center)
                         .textFieldStyle(.plain)
                         .focused($isInputFocused)
@@ -140,7 +126,6 @@ struct PracticeView: View {
                             if oldValue != newValue { SoundManager.shared.playKeyClick() }
                         }
                     
-                    // 底部装饰线
                     Rectangle()
                         .frame(height: 4)
                         .foregroundStyle(borderColor)
@@ -198,7 +183,6 @@ struct PracticeView: View {
     var answerView: some View {
         VStack {
             if let word = viewModel.currentWord {
-                // === 答题界面 ===
                 VStack(spacing: 40) {
                     wordInfoView(word)
                     inputView(word)
@@ -233,58 +217,5 @@ struct PracticeView: View {
         case .grading: return .green
         default: return .secondary.opacity(0.3)
         }
-    }
-}
-
-
-struct SRSButton: View {
-    let title: String
-    let shortcut: KeyEquivalent
-    let color: Color
-    let action: () -> Void
-    
-    @State private var isHovering = false
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                Text(String(describing: shortcut))
-                    .font(.caption)
-                    .opacity(0.6)
-            }
-            .frame(width: 80, height: 60)
-            .background(color.opacity(isHovering ? 0.2 : 0.1))
-            .foregroundStyle(color)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(color.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .keyboardShortcut(shortcut, modifiers: [])
-        .onHover { isHovering = $0 }
-        .scaleEffect(isHovering ? 1.05 : 1.0)
-        .animation(.spring(duration: 0.2), value: isHovering)
-    }
-}
-
-// 保留旧的 GradeButton 以防其他地方引用，虽然现在 PracticeView 用的是 SRSButton
-struct GradeButton: View {
-    let title: String
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .frame(width: 80, height: 40)
-                .background(color.opacity(0.2))
-                .foregroundColor(color)
-                .cornerRadius(8)
-        }
-        .buttonStyle(.plain)
     }
 }

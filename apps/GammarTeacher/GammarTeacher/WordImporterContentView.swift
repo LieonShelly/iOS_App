@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
-struct ContentView: View {
+struct WordImporterContentView: View {
     @Query(sort: \WordItem.createdTime, order: .reverse) private var words: [WordItem]
     @Environment(\.modelContext) private var modelContext
     @State private var isImporting = false

@@ -12,7 +12,7 @@ import SwiftData
 struct GammarTeacherApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            WordImporterContentView()
         }
         .modelContainer(for: WordItem.self)
     }
