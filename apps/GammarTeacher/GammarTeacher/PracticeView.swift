@@ -74,7 +74,6 @@ struct PracticeView: View {
             Text(word.chineseDefinition)
                 .font(.system(size: 32, weight: .bold))
                 .multilineTextAlignment(.center)
-            // C. 例句
             if let example = word.aiExampleSentence, !example.isEmpty {
                 Text(example)
                     .font(.system(size: 18, weight: .regular, design: .serif))
@@ -105,15 +104,25 @@ struct PracticeView: View {
             }
             if viewModel.currentState == .grading {
                 HStack(spacing: 16) {
-                    SRSButton(title: "Again", shortcut: "1", color: .red) { viewModel.applyGrading(.again) }
-                    SRSButton(title: "Hard", shortcut: "2", color: .orange) { viewModel.applyGrading(.hard) }
-                    SRSButton(title: "Good", shortcut: "3", color: .blue) { viewModel.applyGrading(.good) }
-                    SRSButton(title: "Easy", shortcut: "4", color: .green) { viewModel.applyGrading(.easy) }
+                    SRSButton(title: "Again", shortcut: "1", color: .red) {
+                        viewModel.applyGrading(.again)
+                        isInputFocused = true
+                    }
+                    SRSButton(title: "Hard", shortcut: "2", color: .orange) {
+                        viewModel.applyGrading(.hard)
+                        isInputFocused = true
+                    }
+                    SRSButton(title: "Good", shortcut: "3", color: .blue) {
+                        viewModel.applyGrading(.good)
+                        isInputFocused = true
+                    }
+                    SRSButton(title: "Easy", shortcut: "4", color: .green) {
+                        viewModel.applyGrading(.easy)
+                        isInputFocused = true}
                 }
                 .padding(.top, 10)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
-                // 输入框 (Typing Mode)
                 ZStack(alignment: .bottom) {
                     TextField("", text: $viewModel.userInput)
                         .font(.system(size: 60, weight: .bold, design: .serif))
@@ -122,9 +131,6 @@ struct PracticeView: View {
                         .focused($isInputFocused)
                         .foregroundStyle(viewModel.currentState == .punishment ? .red : .primary)
                         .onSubmit { viewModel.submitAnswer() }
-                        .onChange(of: viewModel.userInput) { oldValue, newValue in
-                            if oldValue != newValue { SoundManager.shared.playKeyClick() }
-                        }
                     
                     Rectangle()
                         .frame(height: 4)

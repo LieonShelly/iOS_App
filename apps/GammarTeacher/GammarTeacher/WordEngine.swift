@@ -78,16 +78,17 @@ actor WordEngine {
     }
     
     private func buildVocabPrompt(word: String) -> String {
-        let jsonTemplate = """
+            // 1. 修改模板：明确展示同义词应该用逗号连接，且包在一个引号内
+            let jsonTemplate = """
             {
                 "definition": "...",
                 "example": "...",
-                "synonym": "..."
+                "synonym": "word1, word2"
             }
             """
-        
-        // 2. 修改指令：移除了关于音标编码的规则，保留了核心规则
-        let systemMessage = """
+            
+            // 2. 修改指令：增加针对 Synonym 的格式限制
+            let systemMessage = """
             You are a strict data extraction assistant. 
             Output JSON only.
             
@@ -95,18 +96,22 @@ actor WordEngine {
             1. Output valid JSON exactly matching the template below.
             2. Keep the "definition" and "example" in simple, readable English.
             3. **CRITICAL**: Do not mention the word "\(word)" itself in the "definition" field. Use "It" or "The word" instead.
-            4. Format:
+            4. **SYNONYM FORMAT**: Provide synonyms as a **single string** separated by commas. Do NOT output a JSON array. 
+               - Correct: "synonym": "fast, quick"
+               - Wrong: "synonym": "fast", "quick"
+               - Wrong: "synonym": ["fast", "quick"]
+            5. Format:
             \(jsonTemplate)
             """
-        
-        return """
+            
+            return """
             <|begin_of_text|><|start_header_id|>system<|end_header_id|>
             
             \(systemMessage)<|eot_id|><|start_header_id|>user<|end_header_id|>
             
             \(word)<|eot_id|><|start_header_id|>assistant<|end_header_id|>
             """
-    }
+        }
 }
 
 struct AIWordResponse: Codable {
