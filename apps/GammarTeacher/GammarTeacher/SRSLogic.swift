@@ -48,7 +48,6 @@ class SRSLogic {
             case 1:
                 nextInterval = 6 // 第二次正确，间隔6天
             default:
-                // 之后：Interval * EF
                 var modifier = 1.0
                 if grade == .hard { modifier = 0.85 } // Hard 会让间隔增长慢一点
                 if grade == .easy { modifier = 1.3 }  // Easy 会让间隔增长快一点
@@ -57,11 +56,6 @@ class SRSLogic {
             }
             
             nextRepetition = currentRepetition + 1
-            
-            // 更新难度因子 EF (SM-2 标准公式)
-            // EF' = EF + (0.1 - (5-q)*(0.08+(5-q)*0.02))
-            // q = grade (但在 SM-2 中 grade 是 0-5，我们映射一下)
-            // 我们的 easy(4) -> SM2(5), good(3) -> SM2(4), hard(2) -> SM2(3)
             let q = Double(grade.rawValue + 1) 
             let delta = 0.1 - (5.0 - q) * (0.08 + (5.0 - q) * 0.02)
             nextEaseFactor = max(1.3, currentEaseFactor + delta)

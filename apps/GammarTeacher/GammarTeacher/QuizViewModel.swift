@@ -47,7 +47,7 @@ class QuizViewModel {
             let allWords = try context.fetch(descriptor)
             
 
-            self.reviewQueue = allWords.filter { $0.nextReviewDate <= Date.now }
+            self.reviewQueue = allWords.filter { $0.nextReviewDate <= Date.now }.sorted(by: { $0.createdTime > $1.createdTime})
             
             print("Session started. Due words: \(reviewQueue.count)")
             nextWord()

@@ -76,7 +76,7 @@ struct PracticeView: View {
                 .multilineTextAlignment(.center)
             if let example = word.aiExampleSentence, !example.isEmpty {
                 Text(example)
-                    .font(.system(size: 18, weight: .regular, design: .serif))
+                    .font(.system(size: 26, weight: .regular, design: .serif))
                     .italic()
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
