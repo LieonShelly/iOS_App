@@ -23,7 +23,7 @@ class SRSLogic {
         let repetition: Int // 连续正确次数
     }
     
-    /// 核心 SM-2 算法实现
+    /// 核心 SM-2 算法实现 间隔重复
     /// - Parameters:
     ///   - grade: 用户评分 (1-4)
     ///   - currentInterval: 当前间隔 (天)
