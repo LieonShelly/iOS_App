@@ -57,7 +57,7 @@ struct PracticeView: View {
         VStack(spacing: 16) {
             if let explanation = word.aiExplanation, !explanation.isEmpty {
                 Text(explanation)
-                    .font(.system(size: 28, weight: .medium, design: .serif))
+                    .font(.system(size: 38, weight: .medium, design: .serif))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -72,11 +72,11 @@ struct PracticeView: View {
             }
             
             Text(word.chineseDefinition)
-                .font(.system(size: 32, weight: .bold))
+                .font(.system(size: 42, weight: .bold))
                 .multilineTextAlignment(.center)
             if let example = word.aiExampleSentence, !example.isEmpty {
                 Text(example)
-                    .font(.system(size: 26, weight: .regular, design: .serif))
+                    .font(.system(size: 36, weight: .regular, design: .serif))
                     .italic()
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -94,7 +94,7 @@ struct PracticeView: View {
         VStack(spacing: 20) {
             if viewModel.currentState == .punishment || viewModel.currentState == .grading {
                 Text(word.spelling)
-                    .font(.system(size: 48, weight: .bold, design: .serif))
+                    .font(.system(size:58, weight: .bold, design: .serif))
                     .foregroundStyle(viewModel.currentState == .punishment ? .red : .green)
                     .tracking(3)
                     .transition(.opacity.combined(with: .scale))
@@ -125,7 +125,7 @@ struct PracticeView: View {
             } else {
                 ZStack(alignment: .bottom) {
                     TextField("", text: $viewModel.userInput)
-                        .font(.system(size: 60, weight: .bold, design: .serif))
+                        .font(.system(size: 70, weight: .bold, design: .serif))
                         .multilineTextAlignment(.center)
                         .textFieldStyle(.plain)
                         .focused($isInputFocused)
