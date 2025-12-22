@@ -45,10 +45,12 @@ class QuizViewModel {
                 sortBy: [SortDescriptor(\.nextReviewDate)]
             )
             let allWords = try context.fetch(descriptor)
-            
+        
 
             self.reviewQueue = allWords.filter { $0.nextReviewDate <= Date.now }.sorted(by: { $0.createdTime > $1.createdTime})
-            
+            if let test = allWords.filter( { $0.chineseDefinition.contains("本土的") }).first {
+                reviewQueue.insert(test, at: 0)
+            }
             print("Session started. Due words: \(reviewQueue.count)")
             nextWord()
         } catch {
@@ -88,6 +90,14 @@ class QuizViewModel {
             
         default: break
         }
+    }
+    
+    func deleteCurrentWord() {
+        if let currentWord {
+            context?.delete(currentWord)
+            try? context?.save()
+        }
+        nextWord()
     }
     
     func applyGrading(_ grade: SRSLogic.Grade) {

@@ -44,6 +44,14 @@ struct PracticeView: View {
                     .buttonStyle(.plain)
                     .keyboardShortcut("s", modifiers: .command)
                     .help("Cmd+S to Speak")
+                    
+                    Button(action: {
+                        viewModel.deleteCurrentWord()
+                    }) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 28))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(.horizontal, 40)
