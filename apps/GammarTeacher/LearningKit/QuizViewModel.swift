@@ -34,7 +34,13 @@ class QuizViewModel {
     private var engine = WordEngine() // 实例化引擎
     private var generationTask: Task<Void, Never>? // 用于取消生成任务
     
-    // MARK: - API
+    var sessionTotalCount: Int = 0
+    
+    // 计算属性：当前是第几个 (总数 - 剩余排队数)
+    // 注意：因为 currentWord 已经被移出队列了，所以 (总数 - 队列剩余) 就是当前进度
+    var currentProgressIndex: Int {
+        return sessionTotalCount - reviewQueue.count
+    }
     
     /// 开始复习：只获取 nextReviewDate <= now 的单词
     func startSession(context: ModelContext) {
@@ -51,6 +57,7 @@ class QuizViewModel {
             if let test = allWords.filter( { $0.chineseDefinition.contains("本土的") }).first {
                 reviewQueue.insert(test, at: 0)
             }
+            self.sessionTotalCount = reviewQueue.count
             print("Session started. Due words: \(reviewQueue.count)")
             nextWord()
         } catch {

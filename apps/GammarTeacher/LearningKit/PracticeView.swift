@@ -32,6 +32,15 @@ struct PracticeView: View {
     var topBar: some View {
         VStack {
             HStack {
+                if viewModel.sessionTotalCount > 0 && viewModel.currentState != .idle {
+                    Text("\(viewModel.currentProgressIndex) / \(viewModel.sessionTotalCount)")
+                        .font(.system(.title3, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(8)
+                }
                 Spacer()
                 if viewModel.currentState != .idle {
                     Button(action: {
