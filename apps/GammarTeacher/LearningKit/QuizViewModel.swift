@@ -18,45 +18,46 @@ class QuizViewModel {
     }
     
     private var reviewQueue: [WordItem] = []
-    var context: ModelContext? // 需要注入 Context 以保存数据
-    
-    // 状态
+    var context: ModelContext?
     var currentState: SessionState = .idle
     var currentWord: WordItem?
     var userInput: String = ""
     var punishmentCount: Int = 0
     let requiredRepetitions = 3
-    
     var feedbackMessage: String = ""
-    // 新增：AI 相关
     var aiOutputText: String = ""
     var isGeneratingAI: Bool = false
-    private var engine = WordEngine() // 实例化引擎
-    private var generationTask: Task<Void, Never>? // 用于取消生成任务
+    private var engine = WordEngine()
+    private var generationTask: Task<Void, Never>?
     
     var sessionTotalCount: Int = 0
-    
-    // 计算属性：当前是第几个 (总数 - 剩余排队数)
-    // 注意：因为 currentWord 已经被移出队列了，所以 (总数 - 队列剩余) 就是当前进度
     var currentProgressIndex: Int {
         return sessionTotalCount - reviewQueue.count
     }
     
-    /// 开始复习：只获取 nextReviewDate <= now 的单词
     func startSession(context: ModelContext) {
         self.context = context
         
         do {
-            let descriptor = FetchDescriptor<WordItem>(
-                sortBy: [SortDescriptor(\.nextReviewDate)]
-            )
+            let descriptor = FetchDescriptor<WordItem>()
             let allWords = try context.fetch(descriptor)
-        
-
-            self.reviewQueue = allWords.filter { $0.nextReviewDate <= Date.now }.sorted(by: { $0.createdTime > $1.createdTime})
-            if let test = allWords.filter( { $0.chineseDefinition.contains("本土的") }).first {
-                reviewQueue.insert(test, at: 0)
+            let now = Date.now
+            let newwords = allWords.filter { $0.lastReviewDate == nil }
+                .sorted(by: {$0.createdTime < $1.createdTime })
+            let dueWords = allWords.filter { $0.lastReviewDate != nil && $0.nextReviewDate <= now}
+                .sorted(by: { $0.nextReviewDate < $1.nextReviewDate })
+            let limit = 300
+            var combinedQueue: [WordItem] = []
+            combinedQueue.append(contentsOf: newwords)
+            if combinedQueue.count < limit {
+                let remainingSpace = limit - combinedQueue.count
+                let wordsTodd = dueWords.prefix(remainingSpace)
+                combinedQueue.append(contentsOf: wordsTodd)
+            } else {
+                combinedQueue = Array(combinedQueue.prefix(limit))
             }
+
+            self.reviewQueue = combinedQueue
             self.sessionTotalCount = reviewQueue.count
             print("Session started. Due words: \(reviewQueue.count)")
             nextWord()
@@ -77,7 +78,6 @@ class QuizViewModel {
                 currentState = .grading
                 feedbackMessage = "Correct! Rate difficulty:"
             } else {
-                // ❌ 拼写错误 -> 罚写模式
                 SoundManager.shared.playError()
                 enterPunishmentMode()
             }
@@ -117,7 +117,6 @@ class QuizViewModel {
             currentRepetition: word.repetitionCount
         )
         
-        // 2. 更新数据库模型
         word.interval = result.interval
         word.easeFactor = result.easeFactor
         word.repetitionCount = result.repetition
