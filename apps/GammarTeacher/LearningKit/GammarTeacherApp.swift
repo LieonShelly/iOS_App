@@ -9,10 +9,10 @@ import SwiftUI
 import SwiftData
 
 @main
-struct GammarTeacherApp: App {
+struct LearningKitApp: App {
     var body: some Scene {
         WindowGroup {
-            WordImporterContentView()
+            ContentView()
         }
         .modelContainer(for: WordItem.self)
     }
