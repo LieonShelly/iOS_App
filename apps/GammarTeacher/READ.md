@@ -1,7 +1,7 @@
 # LearningKit: A Native macOS Vocabulary Trainer for Geeks
 LearningKit 是一款专为 macOS 打造的极客背单词应用。它摒弃了传统移动端 App 的碎片化学习方式，结合 键盘肌肉记忆、``本地大模型 (Local LLM)`` 以及 ``间隔重复算法 (SRS)``，为你提供高强度、沉浸式的语言学习体验。
 
-## 简介与核心优势 (Introduction & Features)
+## 简介与核心优势
 ### 解决什么问题？
 - **输入匮乏**：大多数背单词软件只是“看”和“选”，缺乏拼写输出，导致“提笔忘字”。
 
@@ -40,7 +40,7 @@ LearningKit 是一款专为 macOS 打造的极客背单词应用。它摒弃了�
 
     - 所有数据存储在本地沙盒 (Application Support)，支持随时清空或重建。
 
-## 工程架构 (Architecture Overview)
+## 工程架构
 本项目采用 Swift 5.10+ 和 SwiftUI 开发，架构遵循 MVVM 模式，并结合了 Actor 模型处理高并发 AI 任务。
 
 ```mermaid
@@ -252,3 +252,98 @@ sequenceDiagram
     }
 ```   
 点击 Import JSON 即可开始。
+
+###  科学记忆算法 (SM-2 SRS)
+
+- ``SM-2 (SuperMemo-2)`` 是``间隔重复记忆法（Spaced Repetition System, SRS）``的鼻祖级算法。
+- 它的核心目标是：在这一刻，预测你下一次即将忘记这个单词的时间点，并安排你在那之前复习。
+- 核心概念：算法的“三个支柱”在理解流程前，必须先理解这三个变量，它们决定了单词的命运：
+    - 间隔 (Interval, $I$)：
+        - 含义：距离下一次复习还有几天。
+        - 作用：直接决定复习日期。
+    - 难度系数 (Ease Factor, $EF$)：
+        - 含义：这个单词的“简单程度”。默认值为 2.5。
+        - 作用：这是一个倍率。$EF$ 越高（例如 3.0），间隔增长越快；$EF$ 越低（最低 1.3），间隔增长越慢。
+    - 连胜次数 (Repetition, $n$)：
+        - 含义：你连续正确记住了几次。
+        - 作用：决定你是处于“新手期”还是“稳定期”。
+- 算法详细流程解析
+    - 整个算法的输入是用户评分 (Grade)，输出是新的间隔、新的难度系数、新的连胜次数。
+    - 第一阶段：用户评分 (Input)你定义了 
+        - 4 个等级，这决定了算法的分支：
+            - Again (1): 忘了，完全重来。
+            - Hard (2): 记得，但很吃力。
+            - Good (3): 正常回忆。
+            - Easy (4): 秒回，太简单了。
+    - 第二阶段：分支判断 (Logic)
+        - 分支 A：如果你选了 "Again" (忘记)这意味着记忆链断裂了。
+            - 惩罚：连胜次数 ($n$) 归零。
+            - 重置：间隔 ($I$) 归零（变成 0 天，意味着立刻或明天就要复习）。
+            - 降级：难度系数 ($EF$) 减少 0.2。既然你忘了，说明它比预想的难，下次增长倍率要调低。
+        - 分支 B：如果你选了 "Hard / Good / Easy" (记住)这意味着记忆链延续，我们需要计算下一次复习时间。
+            - 刚开始学 (新手保护期)：
+                - 如果这是第 1 次正确 ($n=0$)：间隔设为 1天。
+                - 如果这是第 2 次正确 ($n=1$)：间隔设为 6天。
+                - (这是 SM-2 的经典硬编码，为了让新词快速进入短期记忆)
+            - 进入稳定期 ($n \ge 2$)：
+                - 开始使用公式计算：$$下一次间隔 = 当前间隔 \times EF \times 修正系数$$
+                - 修正系数 (Modifier) 是你代码中的亮点：
+                    - Hard: $\times 0.85$。虽然对了，但为了保险，把下次复习时间缩短一点。
+                    - Easy: $\times 1.3$。太简单了，下次复习时间拉长，避免浪费时间。
+                    - Good: $\times 1.0$。按标准倍率增长。
+            - 调整难度系数 ($EF$)：
+                - 每次正确回忆后，都要更新 $EF$ 值。
+                - 公式：$$EF' = EF + (0.1 - (5-q) \times (0.08 + (5-q) \times 0.02))$$
+                - 这里的 $q$ 是你的评分映射。
+                - 效果：
+                    - 选 Easy：$EF$ 增加（下次间隔倍率变大）。
+                    - 选 Good：$EF$ 基本不变。
+                    - 选 Hard：$EF$ 减小（下次间隔倍率变小，复习更频繁）。
+```mermaid
+flowchart TD
+    %% 定义样式
+    classDef input fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef process fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef fail fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    classDef output fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+
+    Start((开始计算)) --> Input[用户评分 Grade: 1-4]:::input
+    Input --> CheckGrade{评分是 Again ?}:::decision
+
+    %% 分支：忘记 (Again)
+    CheckGrade -- 是 (忘了) --> ResetRep[连胜次数 n = 0]:::fail
+    ResetRep --> ResetInterval[复习间隔 I = 0]:::fail
+    ResetInterval --> DropEF[难度系数 EF 减少 0.2]:::fail
+    DropEF --> CheckMinEF
+
+    %% 分支：记住 (Hard/Good/Easy)
+    CheckGrade -- 否 (记住了) --> IncRep[连胜次数 n + 1]:::process
+    IncRep --> CheckRep{当前是第几次连胜?}:::decision
+
+    %% 间隔计算逻辑
+    CheckRep -- 0次 (第一次对) --> Int1[复习间隔 I = 1天]:::process
+    CheckRep -- 1次 (第二次对) --> Int6[复习间隔 I = 6天]:::process
+    CheckRep -- 2次及以上 --> CalcInt[指数计算: I = 旧间隔 * EF * 修正系数]:::process
+    
+    %% 修正系数逻辑注解
+    CalcInt -. Hard x0.85 / Easy x1.3 .-> CalcInt
+
+    %% EF 计算逻辑
+    Int1 --> CalcEF
+    Int6 --> CalcEF
+    CalcInt --> CalcEF[更新难度系数 EF]:::process
+    CalcEF -- 根据公式调整 --> CheckMinEF
+
+    %% 兜底与输出
+    CheckMinEF{EF < 1.3 ?}:::decision
+    CheckMinEF -- 是 --> SetMinEF[EF = 1.3]:::process
+    CheckMinEF -- 否 --> Output((输出结果:\n新间隔 / 新EF / 新连胜)):::output
+    SetMinEF --> Output
+```
+
+- 总结
+    - 这个算法的精髓在于动态平衡：
+        - 惩罚遗忘：一旦你忘了一次，之前积累的时间优势全部清零，必须从头开始爬坡。
+        - 区分难易：简单的词（Easy）会通过 $EF$ 的增加和 $1.3$ 倍的修正，迅速被推到 30 天、60 天甚至半年后复习。
+        - 关注困难：困难的词（Hard）会通过 $EF$ 的降低和 $0.85$ 倍的修正，被限制在较短的复习周期内（比如 3 天、5 天），直到你掌握它为止。
