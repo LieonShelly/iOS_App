@@ -299,6 +299,7 @@ sequenceDiagram
                     - 选 Easy：$EF$ 增加（下次间隔倍率变大）。
                     - 选 Good：$EF$ 基本不变。
                     - 选 Hard：$EF$ 减小（下次间隔倍率变小，复习更频繁）。
+
 ```mermaid
 flowchart TD
     %% 定义样式
@@ -307,6 +308,8 @@ flowchart TD
     classDef process fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
     classDef fail fill:#ffebee,stroke:#c62828,stroke-width:2px;
     classDef output fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    %% 定义一个专门的黄色便签样式
+    classDef noteStyle fill:#fff9c4,stroke:#fbc02d,stroke-width:1px,stroke-dasharray: 5 5,text-align:left;
 
     Start((开始计算)) --> Input[用户评分 Grade: 1-4]:::input
     Input --> CheckGrade{评分是 Again ?}:::decision
@@ -326,8 +329,8 @@ flowchart TD
     CheckRep -- 1次 (第二次对) --> Int6[复习间隔 I = 6天]:::process
     CheckRep -- 2次及以上 --> CalcInt[指数计算: I = 旧间隔 * EF * 修正系数]:::process
     
-    %% 修正系数逻辑注解
-    CalcInt -. Hard x0.85 / Easy x1.3 .-> CalcInt
+    ModifierNote["📝 修正系数 Modifier:<br/>Hard: x0.85<br/>Easy: x1.3<br/>Good: x1.0"]:::noteStyle
+    CalcInt -.- ModifierNote
 
     %% EF 计算逻辑
     Int1 --> CalcEF
