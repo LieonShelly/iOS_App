@@ -3,3 +3,4 @@
 *.xcworkspace
 Pods/
 **/fastlane/report.xml
+venv/
