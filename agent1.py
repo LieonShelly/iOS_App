@@ -10,6 +10,13 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_ollama import ChatOllama
 from langchain_core.messages import ToolMessage, HumanMessage, SystemMessage
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+
+print("⏳ 正在挂载本地知识库...")
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+vectorstore = Chroma(persist_directory='./chroma_db', embedding_function=embeddings)
+retriever = vectorstore.as_retriever(search_kwargs={"k" : 2})
 
 # 定义数据模型
 class ChatRequest(BaseModel):
@@ -27,7 +34,17 @@ def get_weather(location: str, date: str) -> str:
         return "北京明天晴朗，气温15度，微风。"
     return f"未知城市 {location} 的天气。"
 
-tools = [get_weather]
+# 定义RAG检索工具
+def search_knowledge_base(query: str) -> str:
+    print(f"⚙️ [工具执行] 正在检索本地知识库: {query}")
+    docs = retriever.invoke(query)
+    if not docs:
+        return "知识库中未找到相关内容"
+    results = "\n\n".join([doc.page_content for doc in docs])
+    return f"[检索到的参考信息]:\n{results}"
+
+
+tools = [get_weather, search_knowledge_base]
 
 # 初始化本地 Llama 3.2模型
 llm = ChatOllama(model='llama3.2', base_url="http://localhost:11434", temperature=0.3)
