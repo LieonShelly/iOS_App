@@ -4,3 +4,8 @@ uvicorn
 pydantic
 langchain-ollama
 langgraph
+langchain-chroma
+sentence-transformers
+pypdf
+langchain_community
+langchain_huggingface
